@@ -491,32 +491,18 @@ project-root/
 </script>
 
 <script>
-async function loadCars() {
-  const { data, error } = await db.from("cars").select("*");
+  async function loadCars() {
+    const { data, error } = await db.from("cars").select("*");
 
-  if (error) {
-    console.error(error);
-    return;
+    if (error) {
+      console.error("Supabase error:", error);
+      return;
+    }
+
+    console.log("Cars:", data);
   }
 
-  const container = document.getElementById("car-list");
-  container.innerHTML = "";
-
-  data.forEach(car => {
-    const card = document.createElement("div");
-    card.className = "car-card";
-
-    card.innerHTML = `
-      <h3>${car.title} (${car.year})</h3>
-      <p>${car.description}</p>
-      <strong>${car.price}</strong>
-    `;
-
-    container.appendChild(card);
-  });
-}
-
-loadCars();
+  loadCars();
 </script>
 
 
