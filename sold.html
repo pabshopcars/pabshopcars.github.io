@@ -17,6 +17,13 @@
       --glass:rgba(255,255,255,0.65);
       --shadow:0 6px 20px rgba(12,15,20,0.06);
       --border:rgba(0,0,0,0.04);
+
+      --graybtn-bg:rgba(15,23,36,0.06);
+      --graybtn-bg-hover:rgba(15,23,36,0.10);
+      --graybtn-border:rgba(15,23,36,0.10);
+      --warn: #ff4d4d;
+      --ok: #10b981;
+
       --sold:#ef4444;
     }
     [data-theme="dark"]{
@@ -28,9 +35,14 @@
       --glass:rgba(255,255,255,0.05);
       --shadow:0 10px 30px rgba(0,0,0,0.6);
       --border:rgba(255,255,255,0.03);
+
+      --graybtn-bg:rgba(255,255,255,0.06);
+      --graybtn-bg-hover:rgba(255,255,255,0.10);
+      --graybtn-border:rgba(255,255,255,0.10);
+
       --sold:#f87171;
     }
-    
+
     *{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family:Inter,system-ui;
@@ -41,11 +53,7 @@
     }
     .container{max-width:1200px;margin:0 auto;padding:0 20px}
 
-    /* HEADER PADDING: Added 10px to left and right (was 0 20px, now 10px 20px) */
-    header .container{
-      padding:10px 20px;
-    }
-
+    header .container{ padding:10px 20px; }
     header{
       position:sticky;
       top:0;
@@ -66,6 +74,7 @@
       color:var(--accent);
       font-size:22px;
       letter-spacing:-0.5px;
+      text-decoration:none;
     }
     nav{display:flex;gap:8px;align-items:center}
     nav a{
@@ -106,13 +115,10 @@
     .settings-icon{font-size:20px;transition:transform 0.6s ease}
     .settings-toggle:hover .settings-icon{transform:rotate(90deg)}
 
-    /* Settings Modal */
     .settings-overlay{
       position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
+      top:0; left:0;
+      width:100%; height:100%;
       background:rgba(0,0,0,0.5);
       backdrop-filter:blur(4px);
       z-index:1000;
@@ -123,11 +129,8 @@
       pointer-events:none;
       transition:opacity 0.3s ease;
     }
-    .settings-overlay.active{
-      opacity:1;
-      pointer-events:all;
-    }
-    
+    .settings-overlay.active{ opacity:1; pointer-events:all; }
+
     .settings-modal{
       background:var(--card);
       border-radius:20px;
@@ -139,10 +142,8 @@
       transform:scale(0.8) translateY(-20px);
       transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .settings-overlay.active .settings-modal{
-      transform:scale(1) translateY(0);
-    }
-    
+    .settings-overlay.active .settings-modal{ transform:scale(1) translateY(0); }
+
     .settings-header{
       display:flex;
       justify-content:space-between;
@@ -173,13 +174,9 @@
       color:var(--text);
       transform:rotate(90deg);
     }
-    
-    .settings-section{
-      margin-bottom:28px;
-    }
-    .settings-section:last-child{
-      margin-bottom:0;
-    }
+
+    .settings-section{ margin-bottom:28px; }
+    .settings-section:last-child{ margin-bottom:0; }
     .settings-section h3{
       font-size:16px;
       color:var(--text);
@@ -189,11 +186,8 @@
       letter-spacing:0.5px;
       opacity:0.8;
     }
-    
-    .theme-buttons{
-      display:flex;
-      gap:12px;
-    }
+
+    .theme-buttons{ display:flex; gap:12px; }
     .theme-btn{
       flex:1;
       padding:16px;
@@ -220,6 +214,19 @@
       color:#fff;
     }
 
+    /* admin view buttons */
+    .view-btn-active{
+      background: linear-gradient(135deg, var(--accent), #2b8fff);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 6px 18px rgba(11,110,255,0.35);
+    }
+    .view-btn-inactive{
+      background: var(--card);
+      color: var(--muted);
+      border: 2px solid var(--border);
+    }
+
     .hero{
       padding:60px 0 40px;
       text-align:center;
@@ -237,7 +244,62 @@
       margin-bottom:30px;
     }
 
-    .back-link{
+    .controls{
+      display:flex;
+      gap:14px;
+      max-width:760px;
+      margin:0 auto;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:stretch;
+    }
+    .search{
+      flex:1;
+      min-width:250px;
+      background:var(--card);
+      border-radius:12px;
+      padding:14px 18px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      transition:all 0.3s ease;
+    }
+    .search:focus-within{
+      transform:translateY(-2px);
+      box-shadow:0 12px 30px rgba(11,110,255,0.15);
+      border-color:var(--accent);
+    }
+    .search input{
+      border:0;
+      width:100%;
+      background:none;
+      outline:none;
+      color:var(--text);
+      font-size:16px;
+      font-family:inherit;
+    }
+    .search input::placeholder{color:var(--muted);opacity:0.7}
+
+    .btn{
+      display:inline-block;
+      padding:14px 28px;
+      border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),#2b8fff);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      font-size:16px;
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow:0 4px 15px rgba(11,110,255,0.3);
+      border:none;
+      cursor:pointer;
+    }
+    .btn:hover{
+      transform:translateY(-3px);
+      box-shadow:0 8px 25px rgba(11,110,255,0.4);
+    }
+    .btn:active{transform:translateY(-1px)}
+
+    .sold-link{
       display:inline-block;
       padding:12px 24px;
       margin-top:8px;
@@ -251,7 +313,7 @@
       transition:all 0.3s ease;
       box-shadow:var(--shadow);
     }
-    .back-link:hover{
+    .sold-link:hover{
       color:var(--text);
       transform:translateY(-2px);
       box-shadow:0 8px 20px rgba(0,0,0,0.1);
@@ -278,6 +340,7 @@
     .card:hover{
       transform:translateY(-8px) scale(1.02);
       box-shadow:0 20px 40px rgba(0,0,0,0.15);
+      border-color:var(--accent);
     }
     .card-img-wrap{
       position:relative;
@@ -290,10 +353,10 @@
       object-fit:cover;
       transition:transform 0.6s cubic-bezier(0.4,0,0.2,1);
       filter:grayscale(30%);
-      opacity:0.85;
+      opacity:0.88;
     }
     .card:hover img{transform:scale(1.1)}
-    
+
     .sold-badge{
       position:absolute;
       top:16px;
@@ -302,13 +365,14 @@
       color:#fff;
       padding:8px 16px;
       border-radius:8px;
-      font-weight:700;
+      font-weight:800;
       font-size:14px;
-      letter-spacing:0.5px;
+      letter-spacing:0.7px;
       box-shadow:0 4px 12px rgba(239,68,68,0.4);
       z-index:10;
+      border:1px solid rgba(255,255,255,0.18);
     }
-    
+
     .card-body{padding:20px}
     .card h3{
       margin:0 0 10px;
@@ -330,15 +394,50 @@
       font-size:14px;
     }
 
-    footer{
-      text-align:center;
-      padding:40px 0;
-      color:var(--muted);
-      border-top:1px solid var(--border);
-      margin-top:60px;
-      font-size:14px;
+    .admin-actions{ margin-top:14px; }
+    .action-buttons{
+      display:flex;
+      gap:16px;
+      width:100%;
+      padding:0;
     }
-    
+    .action-btn{
+      flex:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px 24px;
+      text-decoration:none;
+      font-weight:800;
+      font-size:16px;
+      border-radius:12px;
+      cursor:pointer;
+      border:none;
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow:0 4px 15px rgba(0,0,0,0.18);
+    }
+    .action-btn:hover{
+      transform:translateY(-3px);
+      box-shadow:0 8px 25px rgba(0,0,0,0.22);
+    }
+    .action-btn:active{ transform:translateY(-1px); }
+
+    .action-btn.sold{
+      background:linear-gradient(135deg,#fbbf24,#f59e0b);
+      color:#111827;
+      box-shadow:0 4px 15px rgba(245,158,11,0.35);
+    }
+    .action-btn.sold:hover{ box-shadow:0 8px 25px rgba(245,158,11,0.45); }
+
+    .action-btn.delete{
+      background:linear-gradient(135deg,#ff4d4d,#dc2626);
+      color:#fff;
+      box-shadow:0 4px 15px rgba(220,38,38,0.35);
+    }
+    .action-btn.delete:hover{ box-shadow:0 8px 25px rgba(220,38,38,0.45); }
+
+    .admin-only{ display:none; }
+
     #contact{
       padding:60px 0;
       text-align:center;
@@ -354,14 +453,14 @@
       font-size:16px;
       margin-bottom:24px;
     }
-    
     .contact-buttons{
       display:flex;
       gap:16px;
       max-width:600px;
       margin:0 auto;
       justify-content:center;
-      flex-wrap:wrap;
+      flex-direction:column;
+      padding:0;
     }
     .contact-btn{
       display:inline-block;
@@ -375,8 +474,8 @@
       border-radius:12px;
       transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
       box-shadow:0 4px 15px rgba(11,110,255,0.3);
-      flex:1;
-      min-width:200px;
+      width:100%;
+      min-width:auto;
     }
     .contact-btn:hover{
       transform:translateY(-3px);
@@ -389,34 +488,41 @@
     .contact-btn.email:hover{
       box-shadow:0 8px 25px rgba(16,185,129,0.4);
     }
+    .contact-btn.secondary{
+      background: var(--card);
+      color: var(--accent);
+      border: 2px solid var(--accent);
+      box-shadow: var(--shadow);
+    }
+    .contact-btn.secondary:hover{
+      background: var(--glass);
+      transform: translateY(-3px);
+    }
+
+    footer{
+      text-align:center;
+      padding:40px 0;
+      color:var(--muted);
+      border-top:1px solid var(--border);
+      margin-top:60px;
+      font-size:14px;
+    }
 
     @media(max-width:768px){
       .header-inner{padding:12px 0}
-      nav{
-        display:flex;
-        flex-wrap:wrap;
-        justify-content:center;
-        gap:6px;
-      }
-      nav a{
-        padding:8px 14px;
-        font-size:14px;
-      }
+      nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;}
+      nav a{ padding:8px 14px; font-size:14px; }
       .hero{padding:40px 0 30px}
       .hero h1{font-size:36px}
-      .back-link{width:100%;text-align:center}
+      .controls{flex-direction:column;padding:0 20px}
+      .btn{width:100%;text-align:center}
+      .sold-link{width:100%;text-align:center;margin-top:12px}
       .grid{grid-template-columns:1fr;gap:24px}
       .settings-modal{padding:24px}
-      .contact-buttons{
-        flex-direction:column;
-        padding:0 20px;
-      }
-      .contact-btn{
-        width:100%;
-        min-width:auto;
-      }
+      .contact-buttons{flex-direction:column;padding:0 20px;}
+      .contact-btn{width:100%;min-width:auto;}
+      .action-buttons{flex-direction:column;}
     }
-
     @media(max-width:480px){
       .logo{font-size:20px}
       .settings-toggle{padding:8px;width:40px;height:40px}
@@ -428,39 +534,62 @@
 
 <header>
   <div class="container header-inner">
-    <div class="logo">PAB SHOP</div>
+    <a class="logo" href="index.html">PAB SHOP</a>
     <nav>
-      <a href="index.html">Home</a>
+      <a href="index.html#home">Home</a>
       <a href="index.html#cars">Cars</a>
       <a href="index.html#contact">Contact</a>
     </nav>
-    <button id="settingsToggle" class="settings-toggle">
+    <button id="settingsToggle" class="settings-toggle" type="button">
       <span class="settings-icon">⚙️</span>
     </button>
   </div>
 </header>
 
-<!-- Settings Modal -->
 <div class="settings-overlay" id="settingsOverlay">
   <div class="settings-modal">
     <div class="settings-header">
       <h2>Settings</h2>
-      <button class="close-btn" id="closeSettings">×</button>
+      <button class="close-btn" id="closeSettings" type="button">×</button>
     </div>
-    
+
     <div class="settings-section">
       <h3>Theme Mode</h3>
       <div class="theme-buttons">
-        <button class="theme-btn" data-theme="light">
-          <span>☀️</span>
-          <span>Light</span>
-        </button>
-        <button class="theme-btn" data-theme="dark">
-          <span>🌙</span>
-          <span>Dark</span>
-        </button>
+        <button class="theme-btn" data-theme="light" type="button"><span>☀️</span><span>Light</span></button>
+        <button class="theme-btn" data-theme="dark" type="button"><span>🌙</span><span>Dark</span></button>
       </div>
     </div>
+
+    <!-- Owner login trigger -->
+    <div class="settings-section" id="ownerLoginSection">
+      <h3>Secret</h3>
+      <button id="showOwnerLoginBtn" class="theme-btn" style="width:100%;" type="button">Secret</button>
+    </div>
+
+    <!-- Admin section -->
+    <div class="settings-section" id="adminSection" style="display:none;">
+      <h3>Admin</h3>
+
+      <div id="authLoggedOut" style="display:none;">
+        <input id="adminEmail" type="email" placeholder="Owner email"
+          style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:10px;">
+        <input id="adminPassword" type="password" placeholder="Password"
+          style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:10px;">
+        <button id="loginBtn" class="theme-btn" style="width:100%;" type="button">Login</button>
+      </div>
+
+      <div id="authLoggedIn" style="display:none;">
+        <p id="adminEmailLabel" style="color:var(--muted); margin-bottom:12px;"></p>
+        <button id="logoutBtn" class="theme-btn" style="width:100%;" type="button">Logout</button>
+
+        <div style="margin-top:14px;">
+          <button id="viewUserBtn" class="theme-btn view-btn-inactive" style="width:100%;" type="button">User view</button>
+          <button id="viewAdminBtn" class="theme-btn view-btn-inactive" style="width:100%; margin-top:10px;" type="button">Admin view</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -468,136 +597,343 @@
   <div class="container">
     <h1>Sold Cars</h1>
     <p>Recently sold vehicles from our inventory</p>
-    <a class="back-link" href="index.html">← Back to Available Cars</a>
+
+    <div class="controls">
+      <div class="search"><input id="q" placeholder="Search sold cars..."></div>
+      <a class="btn" href="index.html#cars">Back to Cars</a>
+    </div>
+
+    <a class="sold-link" href="index.html">← Back to Available Cars</a>
   </div>
 </section>
 
 <section id="cars" class="container">
-  <div class="grid" id="grid">
-    
-    <!-- ============================================================ -->
-    <!-- EDITABLE: SOLD CAR LISTING 1 -->
-    <!-- Copy car blocks from index.html and add them here -->
-    <!-- ============================================================ -->
-    <div class="card" data-title="bmw 2017">
-      <div class="card-img-wrap">
-        <span class="sold-badge">SOLD</span>
-        <img src="https://picsum.photos/seed/bmwsold/600/400" alt="BMW">
-      </div>
-      <div class="card-body">
-        <h3>2017 BMW 5 Series</h3> <!-- EDITABLE: Car name -->
-        <div class="price">$24,900</div> <!-- EDITABLE: Price -->
-        <p>62,400 mi · Executive package</p> <!-- EDITABLE: Details -->
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- EDITABLE: SOLD CAR LISTING 2 -->
-    <!-- ============================================================ -->
-    <div class="card" data-title="audi 2016">
-      <div class="card-img-wrap">
-        <span class="sold-badge">SOLD</span>
-        <img src="https://picsum.photos/seed/audisold/600/400" alt="Audi">
-      </div>
-      <div class="card-body">
-        <h3>2016 Audi Q5</h3> <!-- EDITABLE: Car name -->
-        <div class="price">$22,500</div> <!-- EDITABLE: Price -->
-        <p>71,200 mi · Quattro AWD</p> <!-- EDITABLE: Details -->
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- EDITABLE: SOLD CAR LISTING 3 -->
-    <!-- ============================================================ -->
-    <div class="card" data-title="lexus 2018">
-      <div class="card-img-wrap">
-        <span class="sold-badge">SOLD</span>
-        <img src="https://picsum.photos/seed/lexussold/600/400" alt="Lexus">
-      </div>
-      <div class="card-body">
-        <h3>2018 Lexus ES 350</h3> <!-- EDITABLE: Car name -->
-        <div class="price">$26,800</div> <!-- EDITABLE: Price -->
-        <p>48,900 mi · Luxury sedan</p> <!-- EDITABLE: Details -->
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- TO ADD MORE SOLD CARS: Copy blocks above and paste here -->
-    <!-- ============================================================ -->
-
-  </div>
+  <div class="grid" id="grid"></div>
 </section>
 
-<!-- ============================================================ -->
-<!-- EDITABLE: CONTACT INFO -->
-<!-- ============================================================ -->
 <section id="contact" class="container">
   <h2>Contact Us</h2>
-  <p>Contact us for more inforamtion</p> <!-- EDITABLE: Contact subtitle -->
+  <p>Contact us for more information</p>
   <div class="contact-buttons">
-    <a href="tel:+15165657312" class="contact-btn">📞 Call: +1 (516) 565-7312</a> <!-- EDITABLE: Phone -->
-    <a href="mailto:sales@pabshop.com" class="contact-btn email">✉️ Email Us</a> <!-- EDITABLE: Email -->
+    <a href="tel:+15165657312" class="contact-btn">📞 Call: +1 (516) 565-7312</a>
+    <a href="mailto:sales@pabshop.com" class="contact-btn email">✉️ Email Us</a>
+    <a href="tel:+15857347880" class="contact-btn secondary">📞 Call: +1 (585) 734-7880</a>
   </div>
 </section>
 
 <footer>
   <div class="container">
-    <p>© 2025 PAB SHOP. All rights reserved.</p> <!-- EDITABLE: Footer text -->
+    <p>© 2025 PAB SHOP. All rights reserved.</p>
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+  /**********************
+   * Theme settings
+   **********************/
   const root = document.documentElement;
   const settingsToggle = document.getElementById('settingsToggle');
   const settingsOverlay = document.getElementById('settingsOverlay');
   const closeSettings = document.getElementById('closeSettings');
-  
-  // Load saved theme
-  const savedTheme = localStorage.getItem('theme') || 'light';
+
+  const savedTheme = localStorage.getItem('theme') || 'dark';
   root.setAttribute('data-theme', savedTheme);
-  
-  // Update UI to reflect saved theme
   updateThemeButtons();
-  
-  // Open settings
-  settingsToggle.onclick = () => {
-    settingsOverlay.classList.add('active');
-  };
-  
-  // Close settings
-  closeSettings.onclick = () => {
-    settingsOverlay.classList.remove('active');
-  };
-  
-  // Close on overlay click
-  settingsOverlay.onclick = (e) => {
-    if (e.target === settingsOverlay) {
-      settingsOverlay.classList.remove('active');
-    }
-  };
-  
-  // Theme buttons
-  document.querySelectorAll('.theme-btn').forEach(btn => {
+
+  settingsToggle.onclick = () => settingsOverlay.classList.add('active');
+  closeSettings.onclick = () => settingsOverlay.classList.remove('active');
+  settingsOverlay.onclick = (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('active'); };
+
+  document.querySelectorAll('.theme-btn[data-theme]').forEach(btn => {
     btn.onclick = () => {
       const theme = btn.dataset.theme;
+      if (!theme) return;
       root.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
       updateThemeButtons();
     };
   });
-  
-  function updateThemeButtons() {
+
+  function updateThemeButtons(){
     const currentTheme = root.getAttribute('data-theme');
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.theme === currentTheme);
     });
   }
+</script>
 
-  // Make cards clickable to detail pages
-  document.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('click', () => {
-      const carId = card.dataset.title.replace(/\s+/g, '-');
-      window.location.href = `cars/${carId}.html`;
+<script>
+  /**********************
+   * Supabase + Admin auth
+   **********************/
+  const SUPABASE_URL = "https://liipbpmjqjqxkuflufkv.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpaXBicG1qcWpxeGt1Zmx1Zmt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MTg0MjYsImV4cCI6MjA4MTQ5NDQyNn0.LrIRgiVCE6E9vyXduQZEkdKAmmLDij2kQN2ajjavTS8";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  window.isAdmin = false;
+  function $(id){ return document.getElementById(id); }
+
+  function getViewMode(){ return localStorage.getItem("viewMode") || "admin"; }
+  function setViewMode(mode){
+    localStorage.setItem("viewMode", mode);
+    location.reload();
+  }
+  function canSeeAdminNow(){
+    return window.isAdmin && (getViewMode() !== "user");
+  }
+
+  function updateViewButtons(){
+    const mode = getViewMode();
+    const userBtn = $("viewUserBtn");
+    const adminBtn = $("viewAdminBtn");
+    if (!userBtn || !adminBtn) return;
+
+    if (mode === "admin"){
+      adminBtn.classList.add("view-btn-active");
+      adminBtn.classList.remove("view-btn-inactive");
+      userBtn.classList.add("view-btn-inactive");
+      userBtn.classList.remove("view-btn-active");
+    } else {
+      userBtn.classList.add("view-btn-active");
+      userBtn.classList.remove("view-btn-inactive");
+      adminBtn.classList.add("view-btn-inactive");
+      adminBtn.classList.remove("view-btn-active");
+    }
+  }
+
+  function applyAdminView(){
+    document.querySelectorAll(".admin-only").forEach(el => {
+      el.style.display = canSeeAdminNow() ? "" : "none";
+    });
+  }
+
+  async function refreshAuthUI(){
+    const { data: { session } } = await db.auth.getSession();
+    window.isAdmin = !!session;
+
+    const adminSection = $("adminSection");
+    const ownerLoginSection = $("ownerLoginSection");
+    const outBox = $("authLoggedOut");
+    const inBox  = $("authLoggedIn");
+    const emailLabel = $("adminEmailLabel");
+
+    if (window.isAdmin){
+      if (adminSection) adminSection.style.display = "";
+      if (ownerLoginSection) ownerLoginSection.style.display = "none";
+    } else {
+      if (adminSection) adminSection.style.display = "none";
+      if (ownerLoginSection) ownerLoginSection.style.display = "";
+    }
+
+    if (outBox) outBox.style.display = window.isAdmin ? "none" : "";
+    if (inBox)  inBox.style.display  = window.isAdmin ? "" : "none";
+
+    if (emailLabel) emailLabel.textContent = session?.user?.email ? `Logged in as: ${session.user.email}` : "";
+
+    updateViewButtons();
+    applyAdminView();
+  }
+
+  async function loginOwner(){
+    const email = $("adminEmail")?.value?.trim();
+    const password = $("adminPassword")?.value;
+    if (!email || !password) return alert("Enter email + password.");
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error){ console.error(error); return alert("Login failed."); }
+    await refreshAuthUI();
+    // reload ONCE on explicit login
+    location.reload();
+  }
+
+  async function logoutOwner(){
+    const { error } = await db.auth.signOut();
+    if (error) console.error(error);
+    await refreshAuthUI();
+    // reload ONCE on explicit logout
+    location.reload();
+  }
+</script>
+
+<script>
+  /**********************
+   * Status normalization: ONLY "available" and "sold"
+   **********************/
+  function normalizeStatus(s){
+    const v = String(s || "").toLowerCase().trim();
+    if (v === "sold") return "sold";
+    // treat anything else as available (including "unavailable")
+    return "available";
+  }
+
+  async function ensureOnlyTwoStatuses(cars){
+    // Fix bad statuses in DB, but do it safely:
+    // - one-time per page load
+    // - only update rows that are not "sold" and not "available"
+    const bad = (cars || []).filter(c => {
+      const raw = String(c.status ?? "").toLowerCase().trim();
+      return raw !== "sold" && raw !== "available";
+    });
+
+    if (!bad.length) return;
+
+    // If user view: still safe to normalize for display, but do NOT mutate DB
+    // to avoid weird surprises for non-admin.
+    if (!canSeeAdminNow()) return;
+
+    // Update in small batches
+    try{
+      const updates = bad.map(c => ({ id: c.id, status: normalizeStatus(c.status) }));
+      // Supabase doesn't do bulk update by payload easily without rpc,
+      // so do sequential (bad statuses should be rare).
+      for (const u of updates){
+        const { error } = await db.from("cars").update({ status: u.status }).eq("id", u.id);
+        if (error) throw error;
+      }
+    } catch(err){
+      console.error(err);
+      // no alert spam, just console
+    }
+  }
+</script>
+
+<script>
+  /**********************
+   * Sold list render
+   **********************/
+  function safeText(v){
+    return (v === null || v === undefined) ? "" : String(v);
+  }
+
+  function renderCards(soldCars){
+    const container = document.getElementById("grid");
+    container.innerHTML = "";
+
+    soldCars.forEach(car => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.setAttribute("data-title", (car.title || "").toLowerCase());
+
+      card.addEventListener("click", () => {
+        window.location.href = `cars/cars.html?id=${car.id}`;
+      });
+
+      const title = safeText(car.title) || "Car";
+      const cover = safeText(car.cover_image) || (Array.isArray(car.images) && car.images[0]) || "";
+      const price = (car.price === null || car.price === undefined || car.price === "") ? "" : `$${car.price}`;
+      const miles = (car.mileage === null || car.mileage === undefined || car.mileage === "") ? "" : `${car.mileage} mi`;
+
+      card.innerHTML = `
+        <div class="card-img-wrap">
+          <span class="sold-badge">SOLD</span>
+          <img src="${cover}" alt="${title}">
+        </div>
+        <div class="card-body">
+          <h3>${title}</h3>
+          <div class="price">${price || "Sold"}</div>
+          <p>${miles}</p>
+
+          <div class="admin-actions admin-only">
+            <div class="action-buttons">
+              <button class="action-btn sold" data-action="unmark" type="button">Unmark Sold</button>
+              <button class="action-btn delete" data-action="delete" type="button">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Only show admin buttons if admin can see admin view
+      if (!canSeeAdminNow()){
+        card.querySelector(".admin-actions")?.remove();
+      } else {
+        // stop card click when buttons clicked
+        card.querySelectorAll("button").forEach(btn => btn.addEventListener("click", e => e.stopPropagation()));
+
+        card.querySelector('[data-action="unmark"]')?.addEventListener("click", async () => {
+          const ok = confirm('Set status to "available"?');
+          if (!ok) return;
+          const { error } = await db.from("cars").update({ status: "available" }).eq("id", car.id);
+          if (error){ console.error(error); alert("Failed."); return; }
+          location.reload();
+        });
+
+        card.querySelector('[data-action="delete"]')?.addEventListener("click", async () => {
+          const ok = confirm("Delete this car forever? (no undo)");
+          if (!ok) return;
+          const { error } = await db.from("cars").delete().eq("id", car.id);
+          if (error){ console.error(error); alert("Failed."); return; }
+          location.reload();
+        });
+      }
+
+      container.insertBefore(card, container.firstChild);
+    });
+
+    applyAdminView();
+  }
+
+  async function loadSoldCars(){
+    const { data, error } = await db.from("cars").select("*");
+    if (error){
+      console.error(error);
+      return;
+    }
+
+    // enforce only sold/available (admin will repair weird statuses)
+    await ensureOnlyTwoStatuses(data || []);
+
+    // display normalized view anyway
+    const normalized = (data || []).map(c => ({ ...c, status: normalizeStatus(c.status) }));
+
+    // only sold cars on this page
+    const soldCars = normalized.filter(c => c.status === "sold");
+
+    renderCards(soldCars);
+
+    // Search
+    const q = document.getElementById('q');
+    q?.addEventListener('input', e => {
+      const v = (e.target.value || "").toLowerCase();
+      document.querySelectorAll('#grid .card').forEach(c => {
+        c.style.display = (c.dataset.title || "").includes(v) ? '' : 'none';
+      });
+    });
+  }
+</script>
+
+<script>
+  /**********************
+   * DOM wiring
+   * FIX: no infinite reload loop.
+   * The loop was caused by location.reload() inside onAuthStateChange.
+   * We now just refresh UI + re-render cards without reloading.
+   **********************/
+  document.addEventListener("DOMContentLoaded", async () => {
+    $("loginBtn")?.addEventListener("click", loginOwner);
+    $("logoutBtn")?.addEventListener("click", logoutOwner);
+
+    $("showOwnerLoginBtn")?.addEventListener("click", () => {
+      const adminSection = $("adminSection");
+      const ownerLoginSection = $("ownerLoginSection");
+
+      if (adminSection) adminSection.style.display = "";
+      if (ownerLoginSection) ownerLoginSection.style.display = "none";
+
+      if ($("authLoggedOut")) $("authLoggedOut").style.display = "";
+      if ($("authLoggedIn")) $("authLoggedIn").style.display = "none";
+    });
+
+    $("viewUserBtn")?.addEventListener("click", () => setViewMode("user"));
+    $("viewAdminBtn")?.addEventListener("click", () => setViewMode("admin"));
+
+    await refreshAuthUI();
+    await loadSoldCars();
+
+    // IMPORTANT: Do NOT reload here. Just refresh UI and re-render.
+    db.auth.onAuthStateChange(async () => {
+      await refreshAuthUI();
+      await loadSoldCars();
     });
   });
 </script>

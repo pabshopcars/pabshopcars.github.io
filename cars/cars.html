@@ -893,6 +893,22 @@
 
       .spec-input{ max-width:200px; }
     }
+
+    /* Remove number input spinners (year, mileage, price) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number]{
+  -moz-appearance: textfield; /* Firefox */
+}
+/* Center slider controls relative to the big photo only */
+.main-media{
+  position:relative;
+}
+
   </style>
 </head>
 
@@ -971,14 +987,17 @@
 
     <div class="content-grid">
       <div class="gallery">
-        <img id="mainImg" class="main-img"
-          src="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop"
-          alt="Main car image">
+        <div class="main-media">
+           <img id="mainImg" class="main-img"
+              src="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop"
+              alt="Main car image">
 
-        <button class="slider-btn prev" onclick="changeSlide(-1)">‹</button>
-        <button class="slider-btn next" onclick="changeSlide(1)">›</button>
+            <button class="slider-btn prev" onclick="changeSlide(-1)">‹</button>
+            <button class="slider-btn next" onclick="changeSlide(1)">›</button>
 
-        <div class="slider-dots" id="sliderDots"></div>
+            <div class="slider-dots" id="sliderDots"></div>
+        </div>
+
 
         <!-- SAVED thumbs only -->
         <div class="thumbs" id="thumbs">
