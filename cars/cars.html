@@ -1535,6 +1535,16 @@
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpaXBicG1qcWpxeGt1Zmx1Zmt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MTg0MjYsImV4cCI6MjA4MTQ5NDQyNn0.LrIRgiVCE6E9vyXduQZEkdKAmmLDij2kQN2ajjavTS8";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // ===== Image pipeline knobs (free-tier friendly) =====
+  const PAB_IMAGE = {
+    maxPhotosPerCar: 25,
+    fullMaxDim: 1800,
+    fullQuality: 0.78,   // WebP quality (0..1)
+    thumbMaxDim: 500,
+    thumbQuality: 0.68,
+    thumbFailFallbackToFull: true
+  };
+
   window.isAdmin = false;
   function $(id){ return document.getElementById(id); }
 
@@ -1577,7 +1587,6 @@
     const desc = $("descEdit");
     if (!descText || !desc) return;
 
-    // match spacing/typography so edit vs view doesn't look like two different websites
     const cs = getComputedStyle(descText);
     desc.style.fontFamily = cs.fontFamily;
     desc.style.fontSize = cs.fontSize;
@@ -1588,7 +1597,6 @@
     desc.style.margin = "0";
     desc.style.color = cs.color;
 
-    // give it breathing room similar to paragraph without changing layout outside it
     if (!desc.style.padding || desc.style.padding === "0px") desc.style.padding = "0";
     autoResizeTextarea(desc);
   }
@@ -1746,37 +1754,225 @@
   };
 
   /**********************
-   * Storage helpers
+   * Storage helpers (WebP + full + thumb)
    **********************/
-  async function compressImage(file){
-    const options = { maxSizeMB: 0.45, maxWidthOrHeight: 1920, useWebWorker: true };
-    return await imageCompression(file, options);
+
+   function uniq(arr){
+  return Array.from(new Set((arr || []).filter(Boolean)));
+}
+
+function fullToThumbPublicUrl(fullUrl){
+  return fullUrl && fullUrl.includes("/full/") ? fullUrl.replace("/full/", "/thumb/") : null;
+}
+
+async function deleteAllCarImagesFromStorage(car){
+  // car.images stores FULL public URLs in your newer pipeline
+  const urls = uniq([...(car.images || []), car.cover_image]);
+
+  // Convert URLs to storage paths
+  const paths = uniq(urls.map(urlToStoragePath).filter(Boolean));
+
+  // Also delete thumbs if full paths use /full/
+  const thumbPaths = uniq(
+    paths
+      .filter(p => p.includes("/full/"))
+      .map(p => p.replace("/full/", "/thumb/"))
+  );
+
+  const allPaths = uniq([...paths, ...thumbPaths]);
+
+  if (!allPaths.length) return;
+
+  const { error } = await db.storage.from("cars").remove(allPaths);
+  if (error) throw error;
+}
+
+
+  function sanitizeBaseName(name){
+    const base = (name || "photo").toLowerCase().replace(/\.[a-z0-9]+$/i, "");
+    return base.replace(/[^a-z0-9_-]+/g, "_").replace(/_+/g, "_").slice(0, 40) || "photo";
   }
+
   function getPublicUrl(path){
     const { data } = db.storage.from("cars").getPublicUrl(path);
     return data.publicUrl;
   }
-  async function uploadPhotosForCar(carId, files){
-    const uploadedUrls = [];
-    for (const file of files){
-      const compressed = await compressImage(file);
-      const safeName = (compressed.name || "photo.jpg").replace(/\s+/g, "_");
-      const path = `${carId}/${Date.now()}_${safeName}`;
 
-      const { error } = await db.storage.from("cars").upload(path, compressed, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: compressed.type || "image/jpeg",
-      });
-      if (error) throw error;
-
-      uploadedUrls.push(getPublicUrl(path));
+  function getThumbUrlFromFull(fullUrl){
+    // We store paths as: <carId>/full/<file>.webp and <carId>/thumb/<file>.webp
+    if (!fullUrl) return fullUrl;
+    if (fullUrl.includes("/full/")) return fullUrl.replace("/full/", "/thumb/");
+    // fallback: derive from carId if possible
+    const carId = window.currentCar?.id;
+    if (carId && fullUrl.includes(`/${carId}/`)) {
+      // If older uploads were <carId>/<file>, no thumbs exist. Return full.
+      return fullUrl;
     }
-    return uploadedUrls;
+    return fullUrl;
   }
-  async function saveCarImages(carId, newUrls){
+
+  async function blobToFile(blob, filename){
+    return new File([blob], filename, { type: blob.type || "image/webp" });
+  }
+
+  async function fileToImageBitmapSafe(file){
+    if ("createImageBitmap" in window) {
+      try { return await createImageBitmap(file); } catch(e) {}
+    }
+    // fallback via Image()
+    const url = URL.createObjectURL(file);
+    try{
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = url;
+      });
+      // draw image into canvas; return canvas instead of bitmap-like (we will handle below)
+      return img;
+    } finally {
+      try{ URL.revokeObjectURL(url); }catch(e){}
+    }
+  }
+
+  async function canvasToWebPBlob(canvas, quality){
+    return await new Promise((resolve) => {
+      // Safari sometimes returns null if webp unsupported (rare now), fallback to jpeg
+      canvas.toBlob((b) => {
+        if (b) return resolve(b);
+        canvas.toBlob((j) => resolve(j), "image/jpeg", Math.min(0.9, Math.max(0.6, quality || 0.8)));
+      }, "image/webp", quality);
+    });
+  }
+
+  function drawCoverFit(ctx, src, targetW, targetH){
+    // cover fit (crop) to preserve aesthetics in thumbs
+    const sw = src.width;
+    const sh = src.height;
+    const sAspect = sw / sh;
+    const tAspect = targetW / targetH;
+
+    let sx = 0, sy = 0, sww = sw, shh = sh;
+    if (sAspect > tAspect){
+      // too wide, crop left/right
+      sww = Math.round(sh * tAspect);
+      sx = Math.round((sw - sww) / 2);
+    } else {
+      // too tall, crop top/bottom
+      shh = Math.round(sw / tAspect);
+      sy = Math.round((sh - shh) / 2);
+    }
+    ctx.drawImage(src, sx, sy, sww, shh, 0, 0, targetW, targetH);
+  }
+
+  async function convertToWebP(file, maxDim, quality, cropThumb=false){
+    // Decode
+    const src = await fileToImageBitmapSafe(file);
+
+    const sw = src.width;
+    const sh = src.height;
+
+    // target dims (contain) for full, cover-crop for thumbs (so your thumb strip looks clean)
+    let tw = sw, th = sh;
+    if (!cropThumb){
+      const scale = Math.min(1, maxDim / Math.max(sw, sh));
+      tw = Math.max(1, Math.round(sw * scale));
+      th = Math.max(1, Math.round(sh * scale));
+    } else {
+      // thumbs: force a consistent aspect similar to your UI thumb boxes
+      // We'll keep "contain" size by maxDim but crop to 3:2 for nicer strip
+      const scale = Math.min(1, maxDim / Math.max(sw, sh));
+      const cw = Math.max(1, Math.round(sw * scale));
+      const ch = Math.max(1, Math.round(sh * scale));
+      // desired 3:2 ratio (w:h = 1.5)
+      if (cw / ch >= 1.5){
+        tw = cw;
+        th = Math.max(1, Math.round(cw / 1.5));
+      } else {
+        th = ch;
+        tw = Math.max(1, Math.round(ch * 1.5));
+      }
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = tw;
+    canvas.height = th;
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    // white background to avoid weird transparency artifacts
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, tw, th);
+
+    if (!cropThumb){
+      ctx.drawImage(src, 0, 0, tw, th);
+    } else {
+      drawCoverFit(ctx, src, tw, th);
+    }
+
+    const webpBlob = await canvasToWebPBlob(canvas, quality);
+
+    // cleanup for createImageBitmap
+    try{
+      if (src && typeof src.close === "function") src.close();
+    }catch(e){}
+
+    return webpBlob;
+  }
+
+  async function uploadOneWebPPair(carId, file, stamp){
+    // Limit absurd phone photos before we do any work
+    if (!file || !file.type || !file.type.startsWith("image/")){
+      throw new Error("Only image files are allowed.");
+    }
+
+    // Convert to WebP full + thumb (two blobs)
+    const fullBlob  = await convertToWebP(file, PAB_IMAGE.fullMaxDim,  PAB_IMAGE.fullQuality,  false);
+    const thumbBlob = await convertToWebP(file, PAB_IMAGE.thumbMaxDim, PAB_IMAGE.thumbQuality, true);
+
+    const base = sanitizeBaseName(file.name);
+    const filename = `${stamp}_${base}.webp`;
+
+    const fullPath  = `${carId}/full/${filename}`;
+    const thumbPath = `${carId}/thumb/${filename}`;
+
+    // Upload thumb first (smaller, quicker), then full
+    const { error: e1 } = await db.storage.from("cars").upload(thumbPath, thumbBlob, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: "image/webp"
+    });
+    if (e1) throw e1;
+
+    const { error: e2 } = await db.storage.from("cars").upload(fullPath, fullBlob, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: "image/webp"
+    });
+    if (e2) throw e2;
+
+    const fullUrl  = getPublicUrl(fullPath);
+    const thumbUrl = getPublicUrl(thumbPath);
+    return { fullUrl, thumbUrl };
+  }
+
+  async function uploadPhotosForCar(carId, files){
+    const uploaded = [];
+    const stamp = Date.now();
+
+    for (let i = 0; i < files.length; i++){
+      const pair = await uploadOneWebPPair(carId, files[i], stamp + i);
+      uploaded.push(pair);
+    }
+    return uploaded;
+  }
+
+  async function saveCarImages(carId, newPairs){
+    // To avoid DB schema changes, we store ONLY full URLs in cars.images,
+    // and we DERIVE thumbs by swapping /full/ -> /thumb/ at render time.
     const existing = Array.isArray(window.currentCar?.images) ? window.currentCar.images : [];
-    const merged = [...existing, ...newUrls];
+    const newFullUrls = newPairs.map(p => p.fullUrl).filter(Boolean);
+    const merged = [...existing, ...newFullUrls];
+
     const { error } = await db.from("cars").update({ images: merged }).eq("id", carId);
     if (error) throw error;
   }
@@ -1787,14 +1983,28 @@
     if (idx === -1) return null;
     return url.substring(idx + marker.length);
   }
+
   async function setCoverImage(carId, url){
     const { error } = await db.from("cars").update({ cover_image: url }).eq("id", carId);
     if (error) throw error;
   }
+
   async function deleteCarImage(carId, url){
-    const path = urlToStoragePath(url);
-    if (path){
-      const { error: storageErr } = await db.storage.from("cars").remove([path]);
+    // delete full + thumb if it matches our /full/ pattern
+    const fullPath = urlToStoragePath(url);
+    const toRemove = [];
+
+    if (fullPath){
+      toRemove.push(fullPath);
+
+      if (fullPath.includes("/full/")){
+        const thumbPath = fullPath.replace("/full/", "/thumb/");
+        toRemove.push(thumbPath);
+      }
+    }
+
+    if (toRemove.length){
+      const { error: storageErr } = await db.storage.from("cars").remove(toRemove);
       if (storageErr) throw storageErr;
     }
 
@@ -1832,6 +2042,7 @@
     if (badge) badge.style.display = isCover ? "" : "none";
     if (coverBtn) coverBtn.textContent = isCover ? "Cover ✅" : "Set as cover";
   }
+
   function closeAdminPhotoModal(){
     const overlay = $("adminPhotoOverlay");
     const img = $("adminPhotoImg");
@@ -1898,7 +2109,7 @@
   }
 
   /**********************
-   * Gallery controller
+   * Gallery controller (thumbs use derived thumb URLs)
    **********************/
   const PAB_GALLERY = {
     images: [],
@@ -1934,12 +2145,26 @@
 
       mainImg.src = this.images[0];
 
-      thumbsContainer.innerHTML = this.images.map((url, idx) => `
-        <div class="thumb${idx===0 ? " active" : ""}" data-idx="${idx}" data-img="${url}">
-          <img src="${url}" alt="Photo ${idx+1}">
-          <div class="thumb-cover-badge">COVER</div>
-        </div>
-      `).join("");
+      thumbsContainer.innerHTML = this.images.map((fullUrl, idx) => {
+        const thumbUrl = getThumbUrlFromFull(fullUrl);
+        return `
+          <div class="thumb${idx===0 ? " active" : ""}" data-idx="${idx}" data-img="${fullUrl}">
+            <img src="${thumbUrl}" alt="Photo ${idx+1}" loading="lazy" decoding="async">
+            <div class="thumb-cover-badge">COVER</div>
+          </div>
+        `;
+      }).join("");
+
+      // If a derived thumb doesn't exist (older images), fail gracefully back to full.
+      if (PAB_IMAGE.thumbFailFallbackToFull){
+        thumbsContainer.querySelectorAll("img").forEach(img => {
+          img.addEventListener("error", () => {
+            const parent = img.closest(".thumb");
+            const full = parent?.dataset?.img;
+            if (full && img.src !== full) img.src = full;
+          }, { once:true });
+        });
+      }
 
       dotsContainer.innerHTML = this.images.map((_, idx) => `
         <div class="dot${idx===0 ? " active" : ""}" data-idx="${idx}"></div>
@@ -2116,7 +2341,21 @@
           const files = input.files ? Array.from(input.files) : [];
           if (!files.length) return;
 
-          for (const f of files){
+          // Enforce max photos per car at selection time too
+          const existingCount = Array.isArray(window.currentCar?.images) ? window.currentCar.images.length : 0;
+          const remaining = Math.max(0, PAB_IMAGE.maxPhotosPerCar - existingCount);
+          if (remaining <= 0){
+            alert(`Max ${PAB_IMAGE.maxPhotosPerCar} photos per car reached.`);
+            input.value = "";
+            return;
+          }
+
+          const picked = files.slice(0, remaining);
+          if (picked.length < files.length){
+            alert(`Only ${remaining} more photos allowed for this car (limit ${PAB_IMAGE.maxPhotosPerCar}).`);
+          }
+
+          for (const f of picked){
             const url = URL.createObjectURL(f);
             this.pending.push({ file: f, url });
           }
@@ -2137,7 +2376,7 @@
       const commitTile = document.createElement("div");
       commitTile.className = "admin-commit-tile admin-only";
       commitTile.innerHTML = `<div class="icon">⬆</div><div class="label">Save 0</div>`;
-      commitTile.title = "Upload selected photos to Supabase";
+      commitTile.title = "Uploads WebP thumbs + WebP full size (free-tier friendly)";
       commitTile.style.display = "none";
 
       commitTile.addEventListener("click", async () => {
@@ -2146,17 +2385,36 @@
         if (!car?.id) return alert("Car not loaded yet.");
         if (!this.pending.length) return;
 
+        // final max cap safety
+        const existingCount = Array.isArray(car.images) ? car.images.length : 0;
+        const remaining = Math.max(0, PAB_IMAGE.maxPhotosPerCar - existingCount);
+        if (remaining <= 0) {
+          alert(`Max ${PAB_IMAGE.maxPhotosPerCar} photos per car reached.`);
+          return;
+        }
+        if (this.pending.length > remaining){
+          alert(`Only ${remaining} more photos allowed for this car (limit ${PAB_IMAGE.maxPhotosPerCar}).`);
+          this.pending = this.pending.slice(0, remaining);
+          this.renderPendingThumbs();
+          if (!this.pending.length) return;
+        }
+
         commitTile.style.pointerEvents = "none";
         commitTile.style.opacity = "0.75";
         commitTile.querySelector(".label").textContent = "Uploading...";
 
         try{
           const files = this.pending.map(p => p.file);
-          const urls = await uploadPhotosForCar(car.id, files);
-          await saveCarImages(car.id, urls);
 
-          if (!car.cover_image && urls[0]){
-            await setCoverImage(car.id, urls[0]);
+          // Upload WebP pair per photo (thumb + full)
+          const pairs = await uploadPhotosForCar(car.id, files);
+
+          // Save ONLY full urls into cars.images (thumbs derived by swapping /full/ -> /thumb/)
+          await saveCarImages(car.id, pairs);
+
+          // set cover if missing
+          if (!car.cover_image && pairs[0]?.fullUrl){
+            await setCoverImage(car.id, pairs[0].fullUrl);
           }
 
           this.pending.forEach(p => { try{ URL.revokeObjectURL(p.url); }catch(e){} });
@@ -2240,7 +2498,7 @@
           if (!canSeeAdminNow()) return;
           openAdminPhotoModal(p.url);
           const status = $("adminPhotoStatus");
-          if (status) status.textContent = "Not uploaded yet. Click green Save tile to upload. (Delete here removes from pending.)";
+          if (status) status.textContent = "Not uploaded yet. Saving will upload WebP thumb + WebP full.";
 
           $("adminCoverBtn").disabled = true;
           $("adminDeleteBtn").disabled = true;
@@ -2294,12 +2552,11 @@
 
     enterEditMode(){
       this.editing = true;
-     // this.setStatus("Editing enabled. Change values, then Save.");
+      this.setStatus("Editing enabled. Change values, then Save.");
       this.toggleInputs(true);
       this.updateSaveButton();
       this.updateEditButtonLabel();
 
-      // make textarea look identical and size itself properly
       syncDescTextareaToDisplay();
       autoResizeTextarea($("descEdit"));
     },
@@ -2352,7 +2609,6 @@
         inp.classList.toggle("editing", enable);
       });
 
-      // About This Car swap (green area becomes editable)
       const descText = $("carDescription");
       const desc = $("descEdit");
       if (canSeeAdminNow()){
@@ -2368,7 +2624,6 @@
         }
       }
 
-      // Swap header display ↔ inputs
       const tText = $("carTitleText");
       const pText = $("carPriceText");
       const tInp  = $("carTitleInput");
@@ -2633,7 +2888,7 @@
     const meta = document.querySelector(".car-meta");
     if (meta) meta.textContent = `${car.mileage ?? "—"} miles`;
 
-    // About This Car: display + editable textarea (same content)
+    // About This Car
     const descEl = $("carDescription");
     const descEdit = $("descEdit");
     const descVal = car.description || "No description available.";
@@ -2644,6 +2899,7 @@
       autoResizeTextarea(descEdit);
     }
 
+    // Images
     const mainImgEl = $("mainImg");
     if (mainImgEl){
       const cover = car.cover_image || (Array.isArray(car.images) && car.images[0]) || mainImgEl.src;
@@ -2727,26 +2983,40 @@
       };
     }
 
-    const delBtn = $("deleteCarBtn");
-    if (delBtn){
-      delBtn.onclick = async () => {
-        if (!canSeeAdminNow()) return;
+const delBtn = $("deleteCarBtn");
+if (delBtn){
+  delBtn.onclick = async () => {
+    if (!canSeeAdminNow()) return;
 
-        const ok = await PAB_CONFIRM.show({
-          title: "Delete car",
-          message: "Delete this car forever? (no undo)",
-          okText: "Delete",
-          cancelText: "Cancel",
-          danger: true,
-          icon: "🗑"
-        });
-        if (!ok) return;
+    const car = window.currentCar;
+    if (!car?.id) return alert("Car not loaded yet.");
 
-        const { error } = await db.from("cars").delete().eq("id", car.id);
-        if (error){ console.error(error); alert("Failed."); return; }
-        window.location.href = "../index.html#cars";
-      };
+    const ok = await PAB_CONFIRM.show({
+      title: "Delete car",
+      message: "Delete this car AND all its photos? (no undo)",
+      okText: "Delete",
+      cancelText: "Cancel",
+      danger: true,
+      icon: "🗑"
+    });
+    if (!ok) return;
+
+    try{
+      // 1) delete storage first
+      await deleteAllCarImagesFromStorage(car);
+
+      // 2) then delete the DB row
+      const { error } = await db.from("cars").delete().eq("id", car.id);
+      if (error) throw error;
+
+      window.location.href = "../index.html#cars";
+    } catch (err){
+      console.error(err);
+      alert("Delete failed. Check console.");
     }
+  };
+}
+
   }
 
   /**********************
@@ -2774,7 +3044,6 @@
     await refreshAuthUI();
     await loadCar();
 
-    // resize on viewport changes too (keeps it visually consistent)
     window.addEventListener("resize", () => {
       if (INLINE_EDIT.editing) {
         syncDescTextareaToDisplay();
