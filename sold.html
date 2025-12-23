@@ -979,20 +979,56 @@
     if (idx === -1) return null;
     return String(url).substring(idx + marker.length);
   }
+  // ===== Cloudinary helpers (sold.html) =====
+  const CLOUDINARY = { cloudName: "dhhbcpnez" };
+
+  function isFullUrl(val){
+    return typeof val === "string" && (val.startsWith("http://") || val.startsWith("https://"));
+  }
+
+  function cloudinaryEncodeId(id){
+    return String(id).split("/").map(encodeURIComponent).join("/");
+  }
+
+  function cloudinaryCardUrl(publicId){
+    const pid = cloudinaryEncodeId(publicId);
+    return `https://res.cloudinary.com/${CLOUDINARY.cloudName}/image/upload/f_auto,q_auto,w_900,c_fill/${pid}`;
+  }
+
+  function cloudinaryFullUrl(publicId){
+    const pid = cloudinaryEncodeId(publicId);
+    return `https://res.cloudinary.com/${CLOUDINARY.cloudName}/image/upload/f_auto,q_auto/${pid}`;
+  }
 
   function deriveCardImageUrl(url){
-    const s = String(url || "");
+    const s = String(url || "").trim();
     if (!s) return s;
-    if (s.includes("/card/")) return s;
-    if (s.includes("/full/")) return s.replace("/full/", "/card/");
-    if (s.includes("/thumb/")) return s.replace("/thumb/", "/card/");
-    return s;
+
+    // Supabase / normal URLs
+    if (isFullUrl(s)){
+      if (s.includes("/card/")) return s;
+      if (s.includes("/full/")) return s.replace("/full/", "/card/");
+      if (s.includes("/thumb/")) return s.replace("/thumb/", "/card/");
+      return s;
+    }
+
+    // Cloudinary public_id
+    return cloudinaryCardUrl(s);
   }
+
   function deriveFallbackFullUrl(url){
-    const s = String(url || "");
-    if (s.includes("/card/")) return s.replace("/card/", "/full/");
-    if (s.includes("/thumb/")) return s.replace("/thumb/", "/full/");
-    return s;
+    const s = String(url || "").trim();
+    if (!s) return s;
+
+    // Supabase / normal URLs
+    if (isFullUrl(s)){
+      if (s.includes("/card/")) return s.replace("/card/", "/full/");
+      if (s.includes("/thumb/")) return s.replace("/thumb/", "/full/");
+      return s;
+    }
+
+    // Cloudinary public_id
+    return cloudinaryFullUrl(s);
   }
 
   async function deleteAllCarImagesFromStorage(car){

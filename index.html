@@ -1304,17 +1304,53 @@
   function deriveCardImageUrl(url){
     const s = String(url || "");
     if (!s) return s;
-    if (s.includes("/card/")) return s;
-    if (s.includes("/full/")) return s.replace("/full/", "/card/");
-    if (s.includes("/thumb/")) return s.replace("/thumb/", "/card/");
-    return s;
+
+    // If it's already a full URL (Supabase or Cloudinary secure_url)
+    if (isFullUrl(s)){
+      if (s.includes("/card/")) return s;
+      if (s.includes("/full/")) return s.replace("/full/", "/card/");
+      if (s.includes("/thumb/")) return s.replace("/thumb/", "/card/");
+      return s;
+    }
+
+    // Otherwise treat it as Cloudinary public_id
+    return cloudinaryCardUrl(s);
   }
 
   function deriveFallbackFullUrl(url){
     const s = String(url || "");
-    if (s.includes("/card/")) return s.replace("/card/", "/full/");
-    if (s.includes("/thumb/")) return s.replace("/thumb/", "/full/");
-    return s;
+    if (!s) return s;
+
+    // If it's Supabase-like URL, convert /card/ or /thumb/ to /full/
+    if (isFullUrl(s)){
+      if (s.includes("/card/")) return s.replace("/card/", "/full/");
+      if (s.includes("/thumb/")) return s.replace("/thumb/", "/full/");
+      return s;
+    }
+
+    // If it's a public_id, return Cloudinary full
+    return cloudinaryFullUrl(s);
+  }
+
+  // ===== Cloudinary helpers (index.html) =====
+  const CLOUDINARY = { cloudName: "dhhbcpnez" };
+
+  function isFullUrl(val){
+    return typeof val === "string" && (val.startsWith("http://") || val.startsWith("https://"));
+  }
+
+  function cloudinaryEncodeId(id){
+    return String(id).split("/").map(encodeURIComponent).join("/");
+  }
+
+  function cloudinaryCardUrl(publicId){
+    const pid = cloudinaryEncodeId(publicId);
+    return `https://res.cloudinary.com/${CLOUDINARY.cloudName}/image/upload/f_auto,q_auto,w_900,c_fill/${pid}`;
+  }
+
+  function cloudinaryFullUrl(publicId){
+    const pid = cloudinaryEncodeId(publicId);
+    return `https://res.cloudinary.com/${CLOUDINARY.cloudName}/image/upload/f_auto,q_auto/${pid}`;
   }
 
   async function deleteAllCarImagesFromStorage(car){

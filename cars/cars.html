@@ -1792,6 +1792,17 @@
     return true;
   }
 
+  function normalizeImageId(idOrUrl){
+    if (!idOrUrl) return null;
+
+    // Already a Cloudinary public_id
+    if (!isFullUrl(idOrUrl)) return idOrUrl;
+
+    // Extract public_id from Cloudinary URL
+    const m = idOrUrl.match(/\/upload\/(?:[^/]+\/)*(.+)$/);
+    return m ? m[1].replace(/\.(jpg|jpeg|png|webp)$/i, "") : idOrUrl;
+  }
+
   function cloudinaryEncodeId(id){
     return id.split('/').map(s => encodeURIComponent(s)).join('/');
   }
@@ -2056,18 +2067,19 @@
     $("adminCoverBtn")?.addEventListener("click", async () => {
       if (!canSeeAdminNow()) return alert("Admin only.");
       const car = window.currentCar;
-      const url = $("adminPhotoImg")?.dataset?.url;
+      const raw = $("adminPhotoImg")?.dataset?.url;
       const status = $("adminPhotoStatus");
-      if (!car?.id || !url) return;
+      if (!car?.id || !raw) return;
 
       try{
         if (status) status.textContent = "Setting cover...";
-        await setCoverImage(car.id, url);
+        const coverId = normalizeImageId(raw);
+        await setCoverImage(car.id, coverId);
         // update in-memory model + UI without reload
         window.currentCar = window.currentCar || {};
-        window.currentCar.cover_image = url;
+        window.currentCar.cover_image = coverId;
         if (status) status.textContent = "Cover updated.";
-        const mainImg = $("mainImg"); if (mainImg) mainImg.src = (isFullUrl(url) ? url : cloudinaryFullUrl(url));
+        const mainImg = $("mainImg"); if (mainImg) mainImg.src = cloudinaryFullUrl(coverId);
         const badge = $("adminCoverBadge"); if (badge) badge.style.display = "";
         const coverBtnEl = $("adminCoverBtn"); if (coverBtnEl) coverBtnEl.textContent = "Cover ✅";
         PAB_GALLERY.updateCoverBadges();
@@ -2312,7 +2324,7 @@
         const badge = el.querySelector(".thumb-cover-badge");
         if (!badge) return;
 
-        if (canSeeAdminNow() && cover && url === cover){
+        if (canSeeAdminNow() && cover && normalizeImageId(url) === cover){
           badge.style.display = "";
         } else {
           badge.style.display = "none";
