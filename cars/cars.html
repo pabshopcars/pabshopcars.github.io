@@ -1981,11 +1981,14 @@
   }
 
   async function uploadPhotosForCar(carId, files){
+    // Backwards compatible: optional third arg `onProgress(done,total,lastResult)`
     const uploaded = [];
     const stamp = Date.now();
     for (let i = 0; i < files.length; i++){
       const up = await uploadOneWebPToCloudinary(carId, files[i], stamp + i);
       uploaded.push(up);
+      // call progress callback if provided (kept as arguments[2] for minimal change)
+      try{ const onProgress = arguments[2]; if (typeof onProgress === 'function') onProgress(i+1, files.length, up); }catch(e){}
     }
     return uploaded;
   }
@@ -2428,8 +2431,17 @@
         try{
           const files = this.pending.map(p => p.file);
 
-          // Upload each photo to Cloudinary (single upload per photo)
-          const results = await uploadPhotosForCar(car.id, files);
+          // prepare progress UI
+          const labelEl = commitTile.querySelector('.label');
+          const iconEl = commitTile.querySelector('.icon');
+          if (labelEl) labelEl.textContent = `Uploading...`;
+          if (iconEl) iconEl.textContent = "0%";
+
+          // Upload each photo to Cloudinary (single upload per photo) with progress callback
+          const results = await uploadPhotosForCar(car.id, files, (done, total) => {
+            const pct = Math.round((done / total) * 100);
+            if (iconEl) iconEl.textContent = `${pct}%`;
+          });
 
           // Persist public_ids into DB
           await saveCarImages(car.id, results);
@@ -2480,6 +2492,7 @@
       }
       commitTile.style.display = "";
       commitTile.querySelector(".label").textContent = `Save ${this.pending.length}`;
+      const iconEl = commitTile.querySelector('.icon'); if (iconEl) iconEl.textContent = '⬆';
       commitTile.style.pointerEvents = "";
       commitTile.style.opacity = "";
     },
