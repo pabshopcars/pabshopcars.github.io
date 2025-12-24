@@ -2029,8 +2029,8 @@
     // Decide whether to recompress/convert based on size
     async function compressBestEffort(file, {
       targetBytes = 200 * 1024,
-      maxDim = 1200,
-      startQuality = 0.84,
+      maxDim = 1600,
+      startQuality = 0.92,
       minQuality = 0.70,
       step = 0.04
     } = {}){
@@ -2051,10 +2051,10 @@
       const kb = (file && file.size) ? (file.size / 1024) : 0;
       if (kb < 100) return file; // keep original
       if (kb <= 200){
-        const blob = await convertToWebP(file, 1200, 0.9, false);
+        const blob = await convertToWebP(file, 1600, 0.9, false);
         return new File([blob], file.name.replace(/\.[\w]+$/, '.webp'), { type: 'image/webp' });
       }
-      const result = await compressBestEffort(file, { targetBytes: 200 * 1024, maxDim: 1200 });
+      const result = await compressBestEffort(file, { targetBytes: 200 * 1024, maxDim: 1600 });
       const uploadFile = new File([result.blob], file.name.replace(/\.[\w]+$/, '.webp'), { type: 'image/webp' });
       if (!result.hitTarget) console.warn('Could not reach 200KB. Uploaded best effort:', uploadFile.size, 'bytes');
       return uploadFile;
@@ -3081,6 +3081,8 @@
           PAB_GALLERY.init(Array.isArray(window.currentCar.images) && window.currentCar.images.length ? window.currentCar.images : (window.currentCar.cover_image ? [window.currentCar.cover_image] : []));
           PAB_GALLERY.updateCoverBadges();
           this.updateCommitTile();
+          // AUTO RELOAD AFTER SUCCESSFUL UPLOAD
+          location.reload();
         } catch(err){
           console.error(err);
           alert("Upload failed. Check console.");
