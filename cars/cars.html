@@ -1640,8 +1640,8 @@
   // ===== Image pipeline knobs (free-tier friendly) =====
   const PAB_IMAGE = {
     maxPhotosPerCar: 250,
-    fullMaxDim: 1080,
-    fullQuality: 0.82,
+    fullMaxDim: 1000,
+    fullQuality: 0.78,
     noCompressBelowBytes: 100 * 1024,   // 100KB
     compressOnlyAboveBytes: 200 * 1024  // 200KB
   };
@@ -2080,9 +2080,9 @@
 
     // Decide whether to recompress/convert based on size
     async function compressBestEffort(file, {
-      targetBytes = 200 * 1024,
-      maxDim = 1080,
-      startQuality = 0.82,
+      targetBytes = 150 * 1024,
+      maxDim = 1000,
+      startQuality = 0.78,
       minQuality = 0.65,
       step = 0.04
     } = {}){
@@ -2102,11 +2102,11 @@
     async function maybeCompressFull(file){
       const kb = (file && file.size) ? (file.size / 1024) : 0;
       if (kb < 100) return file; // keep original
-      if (kb <= 200){
-        const blob = await convertToWebP(file, 1080, 0.82, false);
+      if (kb <= 150){
+        const blob = await convertToWebP(file, 1000, 0.78, false);
         return new File([blob], file.name.replace(/\.[\w]+$/, '.webp'), { type: 'image/webp' });
       }
-      const result = await compressBestEffort(file, { targetBytes: 200 * 1024, maxDim: 1080 });
+      const result = await compressBestEffort(file, { targetBytes: 150 * 1024, maxDim: 1000 });
       const uploadFile = new File([result.blob], file.name.replace(/\.[\w]+$/, '.webp'), { type: 'image/webp' });
       if (!result.hitTarget) console.warn('Could not reach 200KB. Uploaded best effort:', uploadFile.size, 'bytes');
       return uploadFile;
