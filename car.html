@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Car - PAB SHOP</title>
+  <meta name="description" content="Photos, mileage, price and details for a used car from PAB SHOP.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script src="js/theme.js?v=bbf9148ba4"></script>
+  <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/site.css?v=4534f61ef0">
+</head>
+<body>
+<script src="js/icons.js?v=18eb1e76f5"></script>
+<a class="skip" href="#view">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="index.html">PAB SHOP</a>
+    <nav class="topnav" aria-label="Main">
+      <a href="index.html" data-nav="sale">For sale</a>
+      <a href="sold.html" data-nav="sold">Sold</a>
+    </nav>
+    <button class="icon-btn" type="button" data-toggle-theme></button>
+    <a class="btn btn-accent call-top" data-tel><svg class="ic" aria-hidden="true"><use href="#phone"></use></svg><span data-phone-label></span></a>
+  </div>
+</header>
+
+<div id="view" data-page="car" tabindex="-1" aria-busy="true">
+
+<main class="wrap car-page" id="carMain">
+  <a class="back" id="backLink" href="index.html"><svg class="ic" aria-hidden="true"><use href="#arrow-left"></use></svg><span id="backText">All cars</span></a>
+
+  <div class="car-layout">
+    <section class="gallery" aria-label="Photos">
+      <div class="gallery-frame">
+        <div class="slides" id="slides" tabindex="0" aria-label="Photos. Swipe, or use the arrow keys. Tap a photo to see it full screen."></div>
+        <button class="gal-btn prev" id="galPrev" type="button" aria-label="Previous photo"><svg class="ic" aria-hidden="true"><use href="#chevron-left"></use></svg></button>
+        <button class="gal-btn next" id="galNext" type="button" aria-label="Next photo"><svg class="ic" aria-hidden="true"><use href="#chevron-right"></use></svg></button>
+        <p class="gal-count" id="galCount" aria-live="polite"></p>
+      </div>
+      <ul class="thumbs" id="thumbs" aria-label="All photos"></ul>
+    </section>
+
+    <aside class="car-summary" aria-labelledby="carName">
+      <p class="price-tag" id="priceTag"></p>
+      <h1 id="carName"></h1>
+      <dl class="key-facts" id="keyFacts"></dl>
+      <div class="cta-group">
+        <a class="btn btn-accent" data-tel><svg class="ic" aria-hidden="true"><use href="#phone"></use></svg><span>Call Denys</span></a>
+        <a class="btn btn-quiet" data-sms><svg class="ic" aria-hidden="true"><use href="#message-square"></use></svg><span>Text</span></a>
+      </div>
+      <a class="btn btn-quiet fb-link" id="fbLink" target="_blank" rel="noopener" hidden><svg class="ic" aria-hidden="true"><use href="#store"></use></svg><span>See on Facebook Marketplace</span><svg class="ic external" aria-hidden="true"><use href="#external-link"></use></svg></a>
+    </aside>
+  </div>
+
+  <section class="car-section" id="aboutSection" aria-labelledby="aboutHeading" hidden>
+    <h2 id="aboutHeading">About this car</h2>
+    <p class="about" id="about"></p>
+  </section>
+
+  <section class="car-section" id="detailsSection" aria-labelledby="detailsHeading">
+    <h2 id="detailsHeading">Details</h2>
+    <dl class="spec-list" id="specList"></dl>
+  </section>
+
+  <section class="car-section more" id="moreSection" aria-labelledby="moreHeading">
+    <h2 id="moreHeading">More cars</h2>
+    <ul class="car-grid" id="moreGrid"></ul>
+  </section>
+</main>
+
+<main class="wrap not-found" id="notFound" hidden>
+  <svg class="ic empty-icon" aria-hidden="true"><use href="#car"></use></svg>
+  <h1>Car not found</h1>
+  <a class="btn btn-accent" href="index.html">See cars for sale</a>
+</main>
+
+<dialog class="viewer" id="viewer" aria-label="Photos full screen">
+  <div class="viewer-bar">
+    <button class="viewer-close" id="viewerClose" type="button" aria-label="Close photos"><svg class="ic" aria-hidden="true"><use href="#x"></use></svg></button>
+    <p class="viewer-count" id="viewerCount" aria-live="polite"></p>
+  </div>
+  <div class="slides" id="viewerSlides"></div>
+  <button class="gal-btn prev" id="viewerPrev" type="button" aria-label="Previous photo"><svg class="ic" aria-hidden="true"><use href="#chevron-left"></use></svg></button>
+  <button class="gal-btn next" id="viewerNext" type="button" aria-label="Next photo"><svg class="ic" aria-hidden="true"><use href="#chevron-right"></use></svg></button>
+</dialog>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p class="footer-brand">PAB SHOP</p>
+    <ul class="footer-contact" aria-label="Contact">
+      <li><a data-tel><svg class="ic" aria-hidden="true"><use href="#phone"></use></svg><span data-phone-label></span></a></li>
+      <li><a data-tel2><svg class="ic" aria-hidden="true"><use href="#phone"></use></svg><span data-phone2-label></span></a></li>
+      <li><a data-email><svg class="ic" aria-hidden="true"><use href="#mail"></use></svg><span data-email-label></span></a></li>
+    </ul>
+    <div class="footer-mock">
+      <p>Preview of the new design</p>
+      <div class="preview-switches">
+        <div class="theme-switch" role="group" aria-label="Color theme">
+          <button type="button" data-set-theme="plate"><svg class="ic" aria-hidden="true"><use href="#sun"></use></svg>Light</button>
+          <button type="button" data-set-theme="black"><svg class="ic" aria-hidden="true"><use href="#moon"></use></svg>Black</button>
+        </div>
+        <div class="theme-switch" role="group" aria-label="Photo style">
+          <button type="button" data-set-photos="fit"><svg class="ic" aria-hidden="true"><use href="#crop"></use></svg>Fit</button>
+          <button type="button" data-set-photos="pop"><svg class="ic" aria-hidden="true"><use href="#layers"></use></svg>Pop-out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="contact-bar">
+  <a class="btn btn-accent" data-tel><svg class="ic" aria-hidden="true"><use href="#phone"></use></svg><span>Call Denys</span></a>
+  <a class="btn btn-quiet" data-sms><svg class="ic" aria-hidden="true"><use href="#message-square"></use></svg><span>Text</span></a>
+</div>
+
+</div>
+
+<script src="js/data.js?v=6fc4bc2c4c"></script>
+<script src="js/photos.js?v=2fb49b15fa"></script>
+<script src="js/site.js?v=682b6d712d"></script>
+</body>
+</html>

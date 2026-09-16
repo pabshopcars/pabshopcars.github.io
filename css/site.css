@@ -1,0 +1,786 @@
+/* PAB SHOP mockup. Two themes on one set of tokens:
+   plate = New York plate navy on white with Empire gold price stickers
+   black = true black with the same gold stickers
+   Phone first: base styles are the phone layout, min-width queries add space. */
+
+@font-face {
+  font-family: "Archivo";
+  src: url("../fonts/archivo-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+
+:root {
+  --font: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 16px;
+
+  --z-bar: 20;
+
+  /* Motion: iOS-style springs from tools/springs.py (Apple's duration + bounce model).
+     A spring's CSS duration is longer than it feels: the last third is the settle. */
+  /* bounce 0.0: overshoot 0.0%, rests at 1.47x its nominal duration */
+  --spring-smooth: linear(0, 0.004 1.00%, 0.0188 2.25%, 0.0422 3.50%, 0.0789 5.00%, 0.1613 7.75%, 0.3625 13.75%, 0.4654 17.00%, 0.5578 20.25%, 0.6382 23.50%, 0.7066 26.75%, 0.7679 30.25%, 0.8177 33.75%, 0.8602 37.50%, 0.8992 42.00%, 0.9291 46.75%, 0.9533 52.25%, 0.9712 58.50%, 0.9834 65.50%, 0.9914 73.75%, 1);
+  /* bounce 0.2: overshoot 1.5%, rests at 1.35x its nominal duration */
+  --spring-zoom: linear(0, 0.0053 1.25%, 0.024 2.75%, 0.0535 4.25%, 0.0983 6.00%, 0.1434 7.50%, 0.2012 9.25%, 0.4317 15.75%, 0.5328 18.75%, 0.6319 22.00%, 0.7182 25.25%, 0.7857 28.25%, 0.8462 31.50%, 0.8946 34.75%, 0.9321 38.00%, 0.964 41.75%, 0.9872 45.75%, 1.0032 50.25%, 1.0121 55.25%, 1.0147 64.75%, 1);
+  /* bounce 0.3: overshoot 4.6%, rests at 1.64x its nominal duration */
+  --spring-bouncy: linear(0, 0.0078 1.25%, 0.0293 2.50%, 0.0619 3.75%, 0.1125 5.25%, 0.1618 6.50%, 0.2156 7.75%, 0.4828 13.50%, 0.5926 16.00%, 0.701 18.75%, 0.7858 21.25%, 0.8568 23.75%, 0.9193 26.50%, 0.9667 29.25%, 1.0032 32.25%, 1.0219 34.50%, 1.0355 37.00%, 1.0435 39.75%, 1.046 42.75%, 1.042 47.25%, 1.0138 61.50%, 1.0026 70.50%, 0.998 82.25%, 1);
+  --speed: 1;  /* phone timing; computers with a mouse run the same springs faster, see below */
+  --dur-photo: calc(648ms * var(--speed));  /* card photo travels to the car page and back: feels like 480ms, --spring-zoom */
+  --dur-viewer-open: calc(742ms * var(--speed));  /* gallery photo grows into the viewer: feels like 550ms, --spring-zoom */
+  --dur-viewer-close: calc(661ms * var(--speed));  /* viewer photo shrinks back: feels like 450ms, --spring-smooth */
+  --dur-list: calc(735ms * var(--speed));  /* cards slide to new places: feels like 500ms, --spring-smooth */
+  --dur-rise: calc(882ms * var(--speed));  /* car page content rises in: feels like 600ms, --spring-smooth */
+  --dur-sticker: calc(819ms * var(--speed));  /* price sticker lands: feels like 500ms, --spring-bouncy */
+  --dur-release: calc(655ms * var(--speed));  /* button springs back after a press: feels like 400ms, --spring-bouncy */
+  --dur-menu: calc(405ms * var(--speed));  /* sort menu pops open: feels like 300ms, --spring-zoom */
+  --dur-wrap: calc(520ms * var(--speed));  /* last photo slides to the first: feels like 350ms, --spring-smooth */
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);  /* a press going down */
+  --dur-press: 120ms;  /* a press going down; phones: slower, see below */
+  --press-scale: 0.975;  /* how far a pressed button sinks */
+  --press-scale-card: 0.985;  /* car cards sink less: they are big */
+  --spring-release: var(--spring-bouncy);  /* letting go of a press; phones: no bounce */
+  --dur-color: 200ms;
+  --dur-fade: calc(350ms * var(--speed));  /* crossfades: pages, theme, photos arriving */
+}
+
+/* Phones press down slowly and let go without a bounce (asked for 2026-09-15: subtler, much slower). */
+@media (pointer: coarse) {
+  :root { --dur-press: 320ms; --spring-release: var(--spring-smooth); }
+}
+
+/* Anything that is not touch-first (a mouse, a trackpad, or no pointer reported at all) gets
+   faster motion: phone-length springs felt slow on a PC (tested on a PC, 2026-09-15). */
+@media not (pointer: coarse) {
+  :root {
+    --speed: 0.6;
+    --dur-photo: 485ms;  /* PCs keep this photo flight; phones got 20% faster (2026-09-15) */
+  }
+}
+
+html[data-theme="plate"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #f2f4f8;
+  --raised: #ffffff;
+  --line: #dde2eb;
+  --line-strong: #c3cad6;
+  --ink: #13203b;
+  --text: #1d2433;
+  --muted: #525e73;
+  --accent: #f5c000;
+  --accent-hover: #e6b400;
+  --on-accent: #13203b;
+  --sold: #b42318;
+  --sold-bg: #fdeceb;
+  --focus: #1f5fd6;
+  --photo-bg: #e8ecf2;
+  --tag-shadow: 0 2px 0 rgba(19, 32, 59, 0.22);
+  --menu-shadow: 0 12px 32px rgba(19, 32, 59, 0.16);
+}
+
+html[data-theme="black"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --raised: #0f0f0f;
+  --line: #1f1f1f;
+  --line-strong: #333333;
+  --ink: #ffffff;
+  --text: #ededed;
+  --muted: #a3a3a3;
+  --accent: #f5c000;
+  --accent-hover: #ffd23a;
+  --on-accent: #000000;
+  --sold: #ff6b5e;
+  --sold-bg: #240c0a;
+  --focus: #f5c000;
+  --photo-bg: #0d0d0d;
+  --tag-shadow: none;
+  --menu-shadow: none;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* components set display:grid/flex; hidden must still win */
+
+html { -webkit-text-size-adjust: 100%; }
+html:has(dialog[open]) { overflow: hidden; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.55;
+  background: var(--bg);
+  color: var(--text);
+  font-kerning: normal;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+html[data-theme="black"] body { line-height: 1.62; letter-spacing: 0.005em; }
+
+@media (min-width: 720px) {
+  body { padding-bottom: 0; }
+}
+
+img { display: block; max-width: 100%; }
+a { color: inherit; }
+h1, h2, h3 { margin: 0; color: var(--ink); text-wrap: balance; }
+p { text-wrap: pretty; }
+
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+/* No rings after taps (js/site.js adds .keyboard on key presses); text fields keep theirs. */
+html:not(.keyboard) :focus-visible:not(input, select, textarea) { outline: none; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+
+.skip {
+  position: absolute; left: var(--space-3); top: -80px; z-index: 100;
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-s);
+  background: var(--ink); color: var(--bg); font-weight: 700;
+}
+.skip:focus { top: var(--space-3); }
+#view:focus { outline: none; }   /* focused after an in-site page change so screen readers start there */
+
+.wrap { width: min(100% - 2 * var(--space-4), 1180px); margin-inline: auto; }
+@media (min-width: 720px) {
+  .wrap { width: min(100% - 2 * var(--space-6), 1180px); }
+}
+
+.ic { width: 1.25em; height: 1.25em; flex: none; }
+
+/* ---------- Header ---------- */
+.topbar { border-bottom: 1px solid var(--line); background: var(--bg); }
+.topbar-inner { display: flex; align-items: center; gap: var(--space-2); min-height: 64px; }
+
+.brand {
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  margin-right: auto;
+}
+
+.topnav { display: flex; gap: var(--space-1); }
+.topnav a {
+  display: inline-flex; align-items: center;
+  min-height: 44px; padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  color: var(--muted); font-weight: 600; text-decoration: none;
+}
+.topnav a[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -3px 0 var(--accent); border-radius: 0; }
+
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: 44px; height: 44px;
+  border: 0; border-radius: var(--radius-m);
+  background: transparent; color: var(--ink);
+  cursor: pointer;
+}
+.icon-btn .ic { width: 22px; height: 22px; }
+
+/* .topbar prefix: .btn (declared later) would otherwise switch this back on for phones */
+.topbar .call-top { display: none; margin-left: var(--space-2); }
+@media (min-width: 720px) {
+  .topbar .call-top { display: inline-flex; }
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 48px; padding: 0 var(--space-5);
+  border: 1px solid transparent; border-radius: var(--radius-m);
+  font: inherit; font-weight: 700; line-height: 1.2;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+}
+.btn .ic { width: 20px; height: 20px; }
+.btn-accent { background: var(--accent); color: var(--on-accent); }
+.btn-quiet { background: var(--raised); color: var(--ink); border-color: var(--line-strong); }
+
+/* ---------- Page intro, search, filters ---------- */
+.intro { padding-block: var(--space-5) var(--space-4); }
+.intro h1 {
+  font-size: 1.875rem; font-weight: 800; font-stretch: 110%;
+  line-height: 1.08; letter-spacing: -0.01em;
+}
+@media (min-width: 720px) {
+  .intro { padding-block: var(--space-7) var(--space-5); }
+  .intro h1 { font-size: 2.75rem; }
+}
+
+.count-chip {
+  display: inline-grid; place-items: center;
+  min-width: 1.7em; height: 1.45em; padding: 0 0.35em; margin-left: 0.2em;
+  border-radius: 999px; background: var(--sold-bg); color: var(--sold);
+  font-size: 0.6em; font-stretch: 100%; vertical-align: 0.25em;
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+
+.search { position: relative; flex: 1 1 260px; display: flex; align-items: center; }
+.search .ic { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
+.search input {
+  width: 100%; min-height: 48px; padding: 0 var(--space-4) 0 46px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-m);
+  background: var(--raised); color: var(--text); font: inherit;
+}
+.search input::placeholder { color: var(--muted); opacity: 1; }
+.search input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+
+.list-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.result-count { margin: 0; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.sort { flex: 0 0 auto; }
+.sort-button {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 44px; padding: 0 10px 0 14px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-m);
+  background: var(--raised); color: var(--ink);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.sort-button .ic { width: 18px; height: 18px; }
+.sort-button .chevron { color: var(--muted); transition: rotate calc(250ms * var(--speed)) var(--ease-out); }
+.sort-button[aria-expanded="true"] .chevron { rotate: 180deg; }
+
+/* Sort menu: a popover in the top layer; js/site.js places it under (or above) the button. */
+.sort-menu {
+  position: fixed; inset: auto; margin: 0;
+  min-width: 232px; padding: 6px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-l);
+  background: var(--raised); color: var(--text);
+  box-shadow: var(--menu-shadow);
+  opacity: 0;
+  transition: opacity 150ms ease, overlay 150ms allow-discrete, display 150ms allow-discrete;
+}
+.sort-menu:popover-open { opacity: 1; transition-duration: calc(200ms * var(--speed)); }
+@starting-style {
+  .sort-menu:popover-open { opacity: 0; }
+}
+.sort-menu button {
+  display: flex; align-items: center; gap: var(--space-3); width: 100%;
+  min-height: 48px; padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-m); background: transparent;
+  color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+  transition: background-color var(--dur-color) ease;
+}
+.sort-menu button:active { background: var(--surface); }
+.sort-menu .ic { width: 20px; height: 20px; color: var(--muted); }
+.sort-menu .check { margin-left: auto; color: var(--ink); visibility: hidden; }
+.sort-menu [aria-selected="true"],
+.sort-menu [aria-selected="true"] .ic { color: var(--ink); }
+.sort-menu [aria-selected="true"] .check { visibility: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  /* Pops out of the button with a little spring; closing is a quick shrink and fade. */
+  .sort-menu {
+    transform: scale(0.96); transform-origin: top right;
+    transition: opacity 150ms ease, transform 150ms var(--ease-out), overlay 150ms allow-discrete, display 150ms allow-discrete;
+  }
+  .sort-menu.above { transform-origin: bottom right; }
+  .sort-menu:popover-open {
+    transform: none;
+    transition: opacity calc(200ms * var(--speed)) ease, transform var(--dur-menu) var(--spring-zoom),
+      overlay var(--dur-menu) allow-discrete, display var(--dur-menu) allow-discrete;
+  }
+  @starting-style {
+    .sort-menu:popover-open { transform: scale(0.9); }
+  }
+}
+
+/* ---------- Car grid ---------- */
+.car-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--space-6) var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+@media (min-width: 720px) {
+  .car-grid { row-gap: var(--space-7); }
+}
+
+.car-link { display: block; color: inherit; text-decoration: none; border-radius: var(--radius-m); }
+
+.car-photo {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+  border-radius: var(--radius-m); background: var(--photo-bg);
+}
+.car-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.photo-count {
+  position: absolute; top: var(--space-2); right: var(--space-2);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62); color: #fff;
+  font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.photo-count .ic { width: 15px; height: 15px; }
+
+.price-tag {
+  display: inline-block; position: relative;
+  margin: -22px 0 var(--space-2) var(--space-3);
+  padding: 3px 12px 4px;
+  border-radius: var(--radius-s);
+  background: var(--accent); color: var(--on-accent);
+  font-size: 1.375rem; font-weight: 800; font-stretch: 116%; line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--tag-shadow);
+  transform: rotate(-1.5deg);
+}
+.price-tag.is-sold { background: var(--sold-bg); color: var(--sold); box-shadow: none; }
+
+.car-title { font-size: 1.1875rem; font-weight: 700; font-stretch: 104%; line-height: 1.25; }
+
+.car-facts {
+  list-style: none; margin: var(--space-2) 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4);
+  color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.car-facts li { display: inline-flex; align-items: center; gap: 6px; }
+.car-facts .ic { width: 18px; height: 18px; color: var(--ink); }
+
+.car-card.is-sold .car-photo img, .car-card.is-sold .car-pop { filter: saturate(0.35); }
+
+/* A card is a link, and a link can be dragged: pressing and moving started a native drag that
+   left the card pressed (reported 2026-09-15). Cards and their photos are not draggable. */
+.car-link { position: relative; -webkit-user-drag: none; }
+.car-link img { -webkit-user-drag: none; }
+
+/* Photo framing. These are tall 3:4 phone shots and a centred 16:10 crop cut the wheels off most of
+   them, but not all. Fit (default) crops each photo where its own car sits: tools/photos.py measures
+   that and js/site.js puts it on the image as --photo-y (72% for a photo it has not measured).
+   Pop-out draws the cut-off bottom of the car below the photo box from a cut-out strip, and only
+   the photos that have such a strip are centred: a photo without one (not measured yet, and every
+   gallery photo, which never gets a strip) keeps its own crop rather than being centred on
+   nothing. Footer switch: Photos Fit / Pop-out. */
+:root { --photo-y: 72%; }
+.car-photo img, .gallery .slide img { object-position: 50% var(--photo-y); }
+:root[data-photos="pop"] .has-pop .car-photo img { object-position: 50% 50%; }
+.car-pop { display: none; }
+:root[data-photos="pop"] .car-pop {
+  display: block; position: absolute; top: 0; left: 0; z-index: 1;
+  width: 100%; aspect-ratio: 25 / 4;   /* strip height is 16% of the width (BAND in tools/popouts.py) */
+  margin-top: 62.5%;                  /* starts at the photo box bottom: a margin % is of the width */
+  pointer-events: none;
+}
+/* The tag stays on top of the strip, and the name moves down to just below the car: --pop-h is how
+   far the car reaches below the photo as a share of the width, so a margin % lines up with it. */
+:root[data-photos="pop"] .has-pop .price-tag { z-index: 2; margin-bottom: max(var(--space-2), calc(var(--pop-h) * 100% - 8px)); }
+
+.empty { padding: var(--space-7) 0; display: grid; justify-items: start; gap: var(--space-3); }
+.empty h1, .empty h2 { font-size: 1.375rem; font-weight: 800; }
+.empty-icon { width: 40px; height: 40px; color: var(--muted); }
+
+/* ---------- Loading and missing data ---------- */
+/* Until the cars arrive (#view is aria-busy): grey cards, and entrance animations wait,
+   so the sticker and facts animate in with the content instead of while empty. */
+#view[aria-busy="true"] * { animation: none !important; }
+.skeleton .car-photo { margin-bottom: var(--space-3); }
+.skeleton-line { width: 70%; height: 1.1rem; margin: 0 0 var(--space-2); border-radius: var(--radius-s); background: var(--photo-bg); }
+.skeleton-line.short { width: 40%; }
+.price-tag:empty { visibility: hidden; }
+.car-photo > .no-photo { position: absolute; inset: 0; width: 48px; height: 48px; margin: auto; color: var(--muted); }
+.slide.no-photo { display: grid; place-items: center; color: var(--muted); cursor: default; }
+.slide.no-photo .ic { width: 56px; height: 56px; }
+.about { margin: 0; max-width: 65ch; white-space: pre-line; overflow-wrap: anywhere; line-height: 1.55; color: var(--text); }
+
+/* ---------- Recently sold strip ---------- */
+.sold-strip { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--line); }
+.strip-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+.strip-head h2 { font-size: 1.375rem; font-weight: 800; font-stretch: 110%; }
+.strip-head a {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
+  color: var(--ink); font-weight: 700; text-decoration: none;
+}
+.strip-head a .ic { width: 18px; height: 18px; }
+
+.sold-row {
+  list-style: none; margin: 0; padding: 0 0 var(--space-3);
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr);
+  gap: var(--space-4); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.sold-row::-webkit-scrollbar { display: none; }
+.sold-row > li { scroll-snap-align: start; }
+.sold-row .price-tag { font-size: 1.125rem; }
+.sold-row .car-title { font-size: 1rem; }
+
+/* ---------- Footer ---------- */
+.site-footer { margin-top: var(--space-8); border-top: 1px solid var(--line); background: var(--surface); }
+.footer-inner {
+  display: grid; gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start; padding-block: var(--space-6);
+}
+.footer-inner .footer-brand { margin: 0; font-weight: 800; font-stretch: 125%; font-size: 1.25rem; color: var(--ink); }
+.footer-contact { list-style: none; margin: 0; padding: 0; display: grid; }
+.footer-contact a {
+  display: flex; align-items: center; gap: var(--space-3); min-height: 44px;
+  color: var(--ink); font-weight: 600; text-decoration: none;
+}
+.footer-contact .ic { width: 20px; height: 20px; color: var(--muted); }
+.footer-mock p { margin: 0 0 var(--space-2); color: var(--muted); font-size: 0.875rem; }
+.preview-switches { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.theme-switch {
+  display: inline-flex; padding: 3px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-m); background: var(--raised);
+}
+.theme-switch button {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 0 var(--space-4);
+  border: 0; border-radius: 7px; background: transparent;
+  color: var(--muted); font: inherit; font-weight: 600; cursor: pointer;
+}
+.theme-switch .ic { width: 18px; height: 18px; }
+.theme-switch button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* ---------- Phone contact bar ---------- */
+.contact-bar {
+  position: fixed; inset: auto 0 0 0; z-index: var(--z-bar);
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--space-2);
+  padding: 10px var(--space-3) calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg); border-top: 1px solid var(--line);
+}
+@media (min-width: 720px) {
+  .contact-bar { display: none; }
+}
+
+/* ---------- Car page ---------- */
+.back {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 44px; margin-top: var(--space-1);
+  color: var(--muted); font-weight: 600; text-decoration: none;
+}
+
+.car-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); margin-top: var(--space-1); }
+.car-layout > * { min-width: 0; }   /* the thumbnail row must scroll, not widen the page */
+@media (min-width: 960px) {
+  .car-layout { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: var(--space-7); align-items: start; }
+  .car-summary { position: sticky; top: var(--space-5); }
+}
+
+.gallery { position: relative; margin-inline: calc(-1 * var(--space-4)); }
+@media (min-width: 720px) {
+  .gallery { margin-inline: 0; }
+}
+.gallery-frame { position: relative; }
+
+.slides {
+  display: flex; overflow-x: auto; overflow-y: hidden;
+  aspect-ratio: 16 / 10; background: var(--photo-bg);
+  scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  scrollbar-width: none; cursor: zoom-in;
+}
+.slides::-webkit-scrollbar { display: none; }
+@media (min-width: 720px) {
+  .slides { border-radius: var(--radius-l); }
+}
+.slide { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.slide img { width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+
+.gal-count {
+  position: absolute; right: var(--space-3); bottom: var(--space-3);
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0; padding: 3px 10px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62); color: #fff;
+  font-size: 0.875rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.gal-count .ic { width: 16px; height: 16px; }
+
+.gal-btn {
+  display: none; position: absolute; top: 50%; translate: 0 -50%;
+  width: 48px; height: 48px; place-items: center;
+  border: 0; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55); color: #fff; cursor: pointer;
+}
+.gal-btn .ic { width: 26px; height: 26px; }
+.gal-btn.prev { left: var(--space-3); }
+.gal-btn.next { right: var(--space-3); }
+@media (hover: hover) and (pointer: fine) {
+  .gal-btn { display: grid; }
+}
+
+.thumbs {
+  list-style: none; margin: var(--space-3) 0 0; padding: 0 var(--space-4);
+  display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none;
+}
+.thumbs::-webkit-scrollbar { display: none; }
+@media (min-width: 720px) {
+  .thumbs { padding: 0; }
+}
+.thumbs button {
+  display: block; width: 88px; aspect-ratio: 16 / 10; padding: 0;
+  border: 2px solid transparent; border-radius: var(--radius-s);
+  overflow: hidden; background: var(--photo-bg); cursor: pointer;
+  opacity: 0.72;
+}
+.thumbs button[aria-current="true"] { border-color: var(--ink); opacity: 1; }
+.thumbs img { width: 100%; height: 100%; object-fit: cover; }
+
+.car-summary .price-tag { margin: 0 0 var(--space-3); font-size: 1.875rem; }
+.car-summary h1 { font-size: 1.75rem; font-weight: 800; font-stretch: 108%; line-height: 1.12; }
+@media (min-width: 720px) {
+  .car-summary h1 { font-size: 2.25rem; }
+}
+/* Key facts: four icon tiles */
+.key-facts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+}
+.key-facts > div {
+  display: grid; grid-template-columns: auto 1fr;
+  grid-template-areas: "icon value" "icon label";
+  column-gap: var(--space-3); align-items: center;
+  padding: var(--space-3); border-radius: var(--radius-m); background: var(--surface);
+}
+.key-facts dt { display: contents; }
+.key-facts dt .ic { grid-area: icon; width: 26px; height: 26px; color: var(--ink); }
+.key-facts dt span { grid-area: label; color: var(--muted); font-size: 0.8125rem; line-height: 1.2; }
+.key-facts dd {
+  grid-area: value; margin: 0; color: var(--ink);
+  font-size: 1.125rem; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums;
+}
+
+.cta-group { display: none; gap: var(--space-2); margin-top: var(--space-4); }
+/* Marketplace button: full width under the facts (and under Call/Text on larger screens); wraps rather than overflows */
+.fb-link { display: flex; width: 100%; margin-top: var(--space-3); white-space: normal; text-align: center; }
+.fb-link .external { width: 16px; height: 16px; color: var(--muted); }
+@media (min-width: 720px) {
+  .cta-group { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+.car-section { margin-top: var(--space-7); max-width: 720px; }
+.car-section h2 { margin-bottom: var(--space-3); font-size: 1.25rem; font-weight: 800; font-stretch: 108%; }
+@media (min-width: 720px) {
+  .car-section { margin-top: var(--space-8); }
+}
+
+.spec-list { margin: 0; }
+.spec-list > div {
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: 52px; border-bottom: 1px solid var(--line);
+}
+.spec-list dt { display: flex; align-items: center; gap: var(--space-3); color: var(--muted); }
+.spec-list dt .ic { width: 20px; height: 20px; }
+.spec-list dd { margin: 0 0 0 auto; color: var(--ink); font-weight: 700; text-align: right; }
+
+.more { max-width: none; }
+
+.not-found { padding-block: var(--space-9); display: grid; justify-items: start; gap: var(--space-4); }
+.not-found h1 { font-size: 2rem; font-weight: 800; }
+
+/* ---------- Fullscreen photo viewer ---------- */
+.viewer {
+  width: 100vw; height: 100dvh; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0;
+  background: #000; color: #fff;
+}
+.viewer::backdrop { background: #000; }
+.viewer .slides { height: 100%; aspect-ratio: auto; border-radius: 0; background: #000; cursor: default; }
+/* The image box is exactly the visible photo (not a letterboxed full-screen box),
+   so it lines up with the gallery photo when one grows into the other. */
+.viewer .slide { position: relative; }
+.viewer .slide img {
+  position: absolute; inset: 0; margin: auto;
+  width: auto; height: auto; max-width: 100%; max-height: 100%;
+}
+.viewer-bar {
+  position: absolute; inset: 0 0 auto 0; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-2) var(--space-2);
+  pointer-events: none;
+}
+.viewer-bar > * { pointer-events: auto; }
+.viewer-close {
+  display: grid; place-items: center; width: 48px; height: 48px;
+  border: 0; border-radius: 999px; background: rgba(0, 0, 0, 0.55); color: #fff; cursor: pointer;
+}
+.viewer-close .ic { width: 28px; height: 28px; }
+.viewer-count { margin: 0 var(--space-3) 0 0; padding: 2px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); font-weight: 700; font-variant-numeric: tabular-nums; }
+.viewer .gal-btn { z-index: 1; }
+
+/* ==========================================================================
+   Motion, iOS-like: springs that settle instead of stopping.
+   - presses sink to 0.96 fast and spring back with a little bounce
+   - list → car page (swapped in the same document by js/site.js): the pages crossfade in
+     place while the tapped photo flies into the gallery; back flies it home. The pages
+     themselves never move or scale: a stray first frame would turn that into a jump.
+   - the gallery photo grows into the fullscreen viewer and shrinks back
+   - quick filters and sort slide cards to their new places; cards that appear
+     or leave scale from/to 0.9
+   - on a car page the price sticker slaps on and the facts rise in one after another
+   - photos fade in as they arrive; the theme switch crossfades
+   Search typing, swiping, Escape and the back gesture stay instant.
+   ========================================================================== */
+
+/* Color changes, and the spring back after a press (the press itself is below) */
+.btn, .sort-button, .theme-switch button, .icon-btn, .gal-btn, .viewer-close,
+.thumbs button, .topnav a, .back, .strip-head a, .footer-contact a {
+  touch-action: manipulation;
+  transition:
+    transform var(--dur-release) var(--spring-release),
+    background-color var(--dur-color) ease,
+    border-color var(--dur-color) ease,
+    color var(--dur-color) ease,
+    opacity var(--dur-color) ease;
+}
+.car-link { transition: transform var(--dur-release) var(--spring-release); }
+
+/* Hover only where a real pointer hovers; on phones a tap would leave it stuck on. */
+@media (hover: hover) and (pointer: fine) {
+  .topnav a:hover { color: var(--ink); background: var(--surface); }
+  .topnav a[aria-current="page"]:hover { background: transparent; }
+  .icon-btn:hover { background: var(--surface); }
+  .btn-accent:hover { background: var(--accent-hover); }
+  .btn-quiet:hover { border-color: var(--ink); }
+  .sort-button:hover { border-color: var(--ink); }
+  .sort-menu button:hover { background: var(--surface); }
+  .footer-contact a:hover .ic { color: var(--ink); }
+  .back:hover { color: var(--ink); }
+  .gal-btn:hover { background: rgba(0, 0, 0, 0.75); }
+  .thumbs button:hover { opacity: 1; }
+}
+
+/* Photos fade in when they finish loading (they are visible unless JS marked them loading). */
+.car-photo img { transition: opacity var(--dur-fade) ease, transform calc(700ms * var(--speed)) var(--ease-out); }
+.car-photo img.is-loading { opacity: 0; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* Hovering a car leans its photo in a little (the name used to underline). Not with pop-out
+     strips, which would no longer line up with the photo. */
+  :root:not([data-photos="pop"]) .car-link:hover .car-photo img { transform: scale(1.04); }
+}
+
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes sticker-on {
+  from { transform: rotate(-10deg) scale(1.35); opacity: 0; }
+  30% { opacity: 1; }
+  to { transform: rotate(-1.5deg) scale(1); opacity: 1; }
+}
+@keyframes rise-in { from { opacity: 0; transform: translateY(28px); } }
+@keyframes pop-in { from { transform: scale(0.9); } }
+@keyframes slide-out-left { to { transform: translateX(-100%); } }
+@keyframes slide-in-right { from { transform: translateX(100%); } }
+@keyframes slide-out-right { to { transform: translateX(100%); } }
+@keyframes slide-in-left { from { transform: translateX(-100%); } }
+@keyframes photo-reveal { from { transform: translateY(var(--vt-photo-shift, 0%)); } }
+@keyframes photo-hide { to { transform: translateY(var(--vt-photo-shift, 0%)); } }
+@keyframes pop-out { to { transform: scale(0.9); } }
+
+.car-summary .price-tag { animation: fade-in var(--dur-fade) ease both; }
+
+/* ---------- Page to page ----------
+   In-site links swap #view inside one document (js/site.js), so this is a same-document
+   view transition under html.vt-page. There is deliberately no @view-transition opt-in:
+   real page loads made Chrome on iPhone jump (see js/site.js). */
+
+::view-transition-group(root) { animation-duration: var(--dur-fade); animation-timing-function: ease; }
+::view-transition-group(car-photo) { animation-duration: var(--dur-photo); animation-timing-function: var(--spring-zoom); }
+::view-transition-old(car-photo),
+::view-transition-new(car-photo) { animation-duration: calc(250ms * var(--speed)); animation-timing-function: ease; }
+/* The price or Sold tag travels with the photo on its own layer above it (js/site.js names both
+   ends). The two tag pictures crossfade quickly, so it is fully visible the whole way. */
+::view-transition-group(car-price) { animation-duration: var(--dur-photo); animation-timing-function: var(--spring-zoom); }
+::view-transition-old(car-price),
+::view-transition-new(car-price) {
+  animation-duration: calc(200ms * var(--speed)); animation-timing-function: ease;
+  /* both tag pictures fill the same box, so no half-faded edge lets the photo show through */
+  block-size: 100%; object-fit: fill;
+}
+/* Only the card end has a tag (the car page's was scrolled away): show it at once, never fade it in. */
+::view-transition-new(car-price):only-child { animation: none; }
+/* A sticker that flew in with the photo does not also slap on. */
+.car-summary .price-tag.travelled { animation: none; }
+/* The call bar stays still and on top while pages change or cards slide under it. Not during
+   the viewer: there it would sit above the fullscreen photo. */
+:root.vt-page .contact-bar,
+:root.vt-list .contact-bar { view-transition-name: contact-bar; }
+
+/* ---------- Same page (js/site.js sets the vt-* class for the duration) ---------- */
+:root.vt-theme::view-transition-group(root) { animation-duration: calc(450ms * var(--speed)); }
+
+:root.vt-viewer-open::view-transition-group(viewer-photo) { animation-duration: var(--dur-viewer-open); animation-timing-function: var(--spring-zoom); }
+:root.vt-viewer-close::view-transition-group(viewer-photo) { animation-duration: var(--dur-viewer-close); animation-timing-function: var(--spring-smooth); }
+/* Opening the viewer is a crop opening out, not a crossfade: the box is clipped to what it shows,
+   and the full photo starts aligned with the gallery's crop (js/site.js measures the shift) and
+   slides home as the box grows. The cropped picture underneath is redundant, so it is not drawn. */
+:root.vt-viewer-open::view-transition-image-pair(viewer-photo),
+:root.vt-viewer-close::view-transition-image-pair(viewer-photo) { overflow: clip; }
+:root.vt-viewer-open::view-transition-old(viewer-photo),
+:root.vt-viewer-close::view-transition-new(viewer-photo) { animation: none; opacity: 0; }
+:root.vt-viewer-open::view-transition-new(viewer-photo) { animation: photo-reveal var(--dur-viewer-open) var(--spring-zoom) both; }
+:root.vt-viewer-close::view-transition-old(viewer-photo) { animation: photo-hide var(--dur-viewer-close) var(--spring-smooth) both; }
+
+:root.vt-list::view-transition-group(*) { animation-duration: var(--dur-list); animation-timing-function: var(--spring-smooth); }
+
+/* Last photo to first, and back: the two photos slide over each other (js/site.js cannot scroll
+   there without every photo in between flying past). The pair clips them, so nothing shows
+   outside the photo frame, and they do not fade: one leaves as the other arrives. */
+:root.vt-wrap::view-transition-image-pair(wrap-photo),
+:root.vt-wrap-back::view-transition-image-pair(wrap-photo) { overflow: clip; }
+:root.vt-wrap::view-transition-old(wrap-photo),
+:root.vt-wrap::view-transition-new(wrap-photo),
+:root.vt-wrap-back::view-transition-old(wrap-photo),
+:root.vt-wrap-back::view-transition-new(wrap-photo) { mix-blend-mode: normal; }
+:root.vt-wrap::view-transition-old(wrap-photo) { animation: slide-out-left var(--dur-wrap) var(--spring-smooth) both; }
+:root.vt-wrap::view-transition-new(wrap-photo) { animation: slide-in-right var(--dur-wrap) var(--spring-smooth) both; }
+:root.vt-wrap-back::view-transition-old(wrap-photo) { animation: slide-out-right var(--dur-wrap) var(--spring-smooth) both; }
+:root.vt-wrap-back::view-transition-new(wrap-photo) { animation: slide-in-left var(--dur-wrap) var(--spring-smooth) both; }
+:root.vt-list::view-transition-group(root) { animation-duration: var(--dur-fade); animation-timing-function: ease; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Press: sink (--dur-press, slower on phones); letting go uses the spring transition above. */
+  .btn:active, .sort-button:active, .theme-switch button:active, .icon-btn:active,
+  .viewer-close:active, .thumbs button:active, .topnav a:active, .back:active,
+  .strip-head a:active, .footer-contact a:active, .gal-btn:active {
+    transform: scale(var(--press-scale));
+    transition-duration: var(--dur-press), var(--dur-color), var(--dur-color), var(--dur-color), var(--dur-color);
+    transition-timing-function: var(--ease-out), ease, ease, ease, ease;
+  }
+  .car-link:active {
+    transform: scale(var(--press-scale-card));
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-out);
+  }
+
+  /* Car page arrival: the sticker slaps on, then name and facts rise in one after another. */
+  .car-summary .price-tag { animation: sticker-on var(--dur-sticker) var(--spring-bouncy) calc(120ms * var(--speed)) both; }
+  .car-summary h1, .key-facts > div, .car-summary .cta-group, .car-summary .fb-link {
+    animation: rise-in var(--dur-rise) var(--spring-smooth) both;
+  }
+  .car-summary h1 { animation-delay: calc(60ms * var(--speed)); }
+  .key-facts > div:nth-child(1) { animation-delay: calc(160ms * var(--speed)); }
+  .key-facts > div:nth-child(2) { animation-delay: calc(200ms * var(--speed)); }
+  .key-facts > div:nth-child(3) { animation-delay: calc(240ms * var(--speed)); }
+  .key-facts > div:nth-child(4) { animation-delay: calc(280ms * var(--speed)); }
+  .car-summary .cta-group { animation-delay: calc(320ms * var(--speed)); }
+  .car-summary .fb-link { animation-delay: calc(360ms * var(--speed)); }
+
+  /* Filters and sort: every listed car is named so it slides to its new place. */
+  :root.vt-list #carGrid > li { view-transition-name: var(--vt); }
+  :root.vt-list::view-transition-new(*):only-child { animation: fade-in var(--dur-fade) ease both, pop-in var(--dur-list) var(--spring-smooth) both; }
+  :root.vt-list::view-transition-old(*):only-child { animation: fade-out calc(250ms * var(--speed)) ease both, pop-out var(--dur-list) var(--spring-smooth) both; }
+}
+
+/* Reduced motion keeps the crossfades and color changes above and drops everything that
+   moves or scales: no press, no sticker slap or rising facts, no travelling
+   photos (js/site.js skips naming them), and programmatic scrolling jumps instead of gliding. */
